@@ -1,0 +1,19 @@
+cd c:\Users\231969\Downloads\archive
+
+# To inspect Step 4 Preprocessing (encoding, scaling, feature shapes):
+& "C:\ProgramData\anaconda3\python.exe" step4_preprocessing.py
+
+# To inspect Step 5 Model Training (Pipeline fitting, sample predictions):
+& "C:\ProgramData\anaconda3\python.exe" step5_logistic_regression.py
+
+# To inspect Step 6 Evaluation (Accuracy, Precision, Recall, Confusion Matrix):
+& "C:\ProgramData\anaconda3\python.exe" step6_logistic_evaluation.py
+
+# To inspect Step 7 Random Forest Model Training:
+& "C:\ProgramData\anaconda3\python.exe" step7_random_forest.py
+
+# To inspect Step 8 Random Forest Model Evaluation:
+& "C:\ProgramData\anaconda3\python.exe" step8_random_forest_evaluation.py
+
+# To inspect Step 9 Model Comparison:
+& "C:\ProgramData\anaconda3\python.exe" step9_model_comparison.py
