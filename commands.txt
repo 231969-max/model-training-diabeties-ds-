@@ -9,11 +9,17 @@ cd c:\Users\231969\Downloads\archive
 # To inspect Step 6 Evaluation (Accuracy, Precision, Recall, Confusion Matrix):
 & "C:\ProgramData\anaconda3\python.exe" step6_logistic_evaluation.py
 
-# To inspect Step 7 Random Forest Model Training:
+# To inspect Step 7 Random Forest Model Training (Dataset Enhancement + 10 features):
 & "C:\ProgramData\anaconda3\python.exe" step7_random_forest.py
 
-# To inspect Step 8 Random Forest Model Evaluation:
+# To inspect Step 8 Random Forest Model Evaluation (ROC-AUC, Confusion Matrix, Metrics):
 & "C:\ProgramData\anaconda3\python.exe" step8_random_forest_evaluation.py
 
-# To inspect Step 9 Model Comparison:
-& "C:\ProgramData\anaconda3\python.exe" step9_model_comparison.py
+# To inspect Step 9 Model Serialization (Saving full Pipeline to .pkl):
+& "C:\ProgramData\anaconda3\python.exe" save_random_forest_model.py
+
+# To test standalone inference using the saved .pkl model:
+& "C:\ProgramData\anaconda3\python.exe" test_saved_model.py
+
+# To launch Step 10 Flask Web Application (http://127.0.0.1:5000):
+& "C:\ProgramData\anaconda3\python.exe" app.py

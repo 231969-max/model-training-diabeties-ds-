@@ -1,33 +1,42 @@
 """
 =============================================================================
-Step 8: Random Forest Model Evaluation Pipeline
+STEP 8: RANDOM FOREST MODEL EVALUATION & COMPARATIVE ANALYSIS
 =============================================================================
 
-Viva & Lab Concepts (Explained in Simple Terms):
+Lab & Viva Explanations (Beginner-Friendly):
 
-1. WHY DO WE EVALUATE ON THE TEST SET?
-   Evaluating the trained Random Forest on the 40,000 unseen test samples measures 
-   how well an ensemble of decision trees generalizes to new patients. It confirms 
-   whether non-linear tree patterns translate into higher classification performance.
+1. PURPOSE OF STEP 8:
+   - In Step 7, we engineered 10 new features, handled missing values, and trained 
+     our RandomForestClassifier on the enhanced dataset ('diabetes_processed.csv').
+   - In Step 8, we perform rigorous, honest statistical evaluation strictly on the 
+     unseen 40% test partition (40,000 patients).
 
-2. CONFUSION MATRIX (CM) EXPLAINED FOR RANDOM FOREST:
-   - True Negatives (TN): Correctly predicted no diabetes (healthy patient).
-   - False Positives (FP): Predicted diabetes when the actual class was no diabetes (False Alarm / Type I Error).
-   - False Negatives (FN): Predicted no diabetes when the actual class was diabetes (Missed Case / Type II Error).
-   - True Positives (TP): Correctly predicted diabetes.
+2. KEY EVALUATION METRICS:
+   - Accuracy: Overall proportion of correct predictions across both classes:
+     (TP + TN) / Total
+   - Precision: Out of all patients the model flagged as Diabetic, how many actually are?
+     TP / (TP + FP) -> Critical to avoid false alarms and unnecessary stress/treatments.
+   - Recall (Sensitivity): Out of all actual Diabetic patients, how many did the model catch?
+     TP / (TP + FN) -> Highly critical in clinical screening to prevent missed diagnoses.
+   - F1-Score: Harmonic mean of Precision and Recall:
+     2 * (Precision * Recall) / (Precision + Recall)
+   - ROC-AUC: Area Under the Receiver Operating Characteristic Curve. Evaluates the model's 
+     ability to rank positive cases higher than negative cases across all classification thresholds.
 
-3. KEY METRICS & FORMULAS:
-   - ACCURACY: (TP + TN) / (TP + TN + FP + FN)
-     Percentage of all test predictions that were correct.
-   - PRECISION: TP / (TP + FP)
-     When the model predicts diabetes, how often that prediction is correct.
-   - RECALL: TP / (TP + FN)
-     Percentage of actual diabetes cases that the model successfully detects.
+3. DATASET NOTE:
+   - Random Forest is evaluated on the enhanced dataset ('diabetes_processed.csv') with 
+     10 additional engineered features.
+   - Logistic Regression was previously evaluated on the original 29-feature set.
 =============================================================================
 """
 
 import os
+import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -37,40 +46,55 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
-    confusion_matrix
+    f1_score,
+    confusion_matrix,
+    roc_auc_score,
+    roc_curve
 )
 
 # -----------------------------------------------------------------------------
-# 1. Load Dataset
+# 1. Dataset Verification & Loading
 # -----------------------------------------------------------------------------
-csv_path = 'diabetes.csv'
-initial_mtime = os.path.getmtime(csv_path)
+orig_csv = 'diabetes.csv'
+processed_csv = 'diabetes_processed.csv'
 
-df = pd.read_csv(csv_path)
+# Check original dataset integrity
+orig_mtime_before = os.path.getmtime(orig_csv)
+orig_size_before = os.path.getsize(orig_csv)
+
+df_orig = pd.read_csv(orig_csv)
+df = pd.read_csv(processed_csv)
+
+n_records = len(df)
+n_cols_orig = df_orig.shape[1]
+n_cols_proc = df.shape[1]
+n_new_cols = n_cols_proc - n_cols_orig
+missing_val_count = df.isnull().sum().sum()
 
 # -----------------------------------------------------------------------------
-# 2. Target and Feature Separation (Excluding Target Leakage)
+# 2. Target and Feature Separation
 # -----------------------------------------------------------------------------
-# 'diagnosed_diabetes' = target
-# 'diabetes_stage' = excluded because of target leakage
+# 'diagnosed_diabetes' is target (y)
+# 'diabetes_stage' is excluded to prevent severe target leakage
 y = df['diagnosed_diabetes']
 X = df.drop(columns=['diagnosed_diabetes', 'diabetes_stage'])
 
-categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-numerical_cols = X.select_dtypes(exclude=['object']).columns.tolist()
+categorical_cols = X.select_dtypes(include=['object', 'string']).columns.tolist()
+numerical_cols = X.select_dtypes(exclude=['object', 'string']).columns.tolist()
 
 # -----------------------------------------------------------------------------
 # 3. Stratified 60/40 Train-Test Split
 # -----------------------------------------------------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
+    X,
+    y,
     test_size=0.40,
     random_state=42,
     stratify=y
 )
 
 # -----------------------------------------------------------------------------
-# 4. Preprocessing Pipeline
+# 4. Pipeline Setup & Model Training
 # -----------------------------------------------------------------------------
 preprocessor = ColumnTransformer(
     transformers=[
@@ -79,9 +103,6 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-# -----------------------------------------------------------------------------
-# 5. Build Random Forest Pipeline
-# -----------------------------------------------------------------------------
 model = Pipeline(steps=[
     ('preprocessor', preprocessor),
     ('classifier', RandomForestClassifier(
@@ -91,74 +112,119 @@ model = Pipeline(steps=[
     ))
 ])
 
-# -----------------------------------------------------------------------------
-# 6. Train on Training Data ONLY and Predict on Test Data
-# -----------------------------------------------------------------------------
+# Fit strictly on training partition
 model.fit(X_train, y_train)
+
+# -----------------------------------------------------------------------------
+# 5. Generate Predictions and Probabilities on Unseen Test Partition
+# -----------------------------------------------------------------------------
 y_pred = model.predict(X_test)
+y_proba = model.predict_proba(X_test)[:, 1]
 
 # -----------------------------------------------------------------------------
-# 7. Calculate Official Evaluation Metrics
+# 6. Calculate Statistical Evaluation Metrics
 # -----------------------------------------------------------------------------
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
+test_samples = len(y_test)
+acc = accuracy_score(y_test, y_pred)
+prec = precision_score(y_test, y_pred)
+rec = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
 cm = confusion_matrix(y_test, y_pred)
-
 tn, fp, fn, tp = cm.ravel()
 
-# Verifications
-total_tested = tn + fp + fn + tp
-is_total_verified = (total_tested == len(y_test))
-
-actual_class_0 = (y_test == 0).sum()
-actual_class_1 = (y_test == 1).sum()
-is_class_0_verified = ((tn + fp) == actual_class_0)
-is_class_1_verified = ((fn + tp) == actual_class_1)
-
-num_features = len(model.named_steps['preprocessor'].get_feature_names_out())
-
-final_mtime = os.path.getmtime(csv_path)
-csv_unmodified = (initial_mtime == final_mtime)
+roc_auc = roc_auc_score(y_test, y_proba)
+fpr, tpr, thresholds = roc_curve(y_test, y_proba)
 
 # -----------------------------------------------------------------------------
-# 8. Print Results Clearly
+# 7. Verification of Integrity & Math
 # -----------------------------------------------------------------------------
-print("=== STEP 8: RANDOM FOREST EVALUATION ===")
+cm_sum = tn + fp + fn + tp
+is_math_verified = (cm_sum == test_samples)
+has_no_missing = (missing_val_count == 0)
+
+orig_mtime_after = os.path.getmtime(orig_csv)
+orig_size_after = os.path.getsize(orig_csv)
+orig_unmodified = (orig_mtime_before == orig_mtime_after) and (orig_size_before == orig_size_after)
+
+# -----------------------------------------------------------------------------
+# 8. Generate ROC Curve Plot
+# -----------------------------------------------------------------------------
+roc_img_path = 'random_forest_roc_curve.png'
+
+plt.figure(figsize=(8, 6), dpi=300)
+plt.plot(fpr, tpr, color='#1f77b4', lw=2.5, label=f'Random Forest ROC Curve (AUC = {roc_auc:.4f})')
+plt.plot([0, 1], [0, 1], color='#d62728', lw=1.8, linestyle='--', label='Random Chance Baseline (AUC = 0.5000)')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12, fontweight='bold', labelpad=10)
+plt.ylabel('True Positive Rate (Sensitivity / Recall)', fontsize=12, fontweight='bold', labelpad=10)
+plt.title('Receiver Operating Characteristic (ROC) Curve\nRandom Forest Classifier (Enhanced Dataset)', fontsize=14, fontweight='bold', pad=15)
+plt.legend(loc='lower right', fontsize=11, frameon=True)
+plt.grid(True, linestyle=':', alpha=0.6)
+plt.tight_layout()
+plt.savefig(roc_img_path, dpi=300)
+plt.close()
+
+# -----------------------------------------------------------------------------
+# 9. Print Complete Real Execution Results & Comparison
+# -----------------------------------------------------------------------------
+print("=== DATASET PRE-CHECK & INTEGRITY ===")
+print(f"Processed dataset rows: {n_records:,}")
+print(f"Original columns: {n_cols_orig}")
+print(f"Processed columns: {n_cols_proc}")
+print(f"Newly added columns: {n_new_cols}")
+print(f"No missing values = {has_no_missing}")
+print(f"Original diabetes.csv modified = {not orig_unmodified}")
 print()
-print("Model: Random Forest Classifier")
-print("Number of trees: 100")
+
+print("=== STEP 8: RANDOM FOREST MODEL EVALUATION ===")
 print()
-print(f"Test samples: {len(y_test)}")
-print(f"Features after preprocessing: {num_features}")
+print(f"Number of test samples: {test_samples:,}")
+print(f"Accuracy:  {acc * 100:.2f}%")
+print(f"Precision: {prec * 100:.2f}%")
+print(f"Recall:    {rec * 100:.2f}%")
+print(f"F1-score:  {f1 * 100:.2f}%")
+print(f"ROC-AUC:   {roc_auc:.4f}")
 print()
-print(f"Accuracy (AC):  {accuracy:.4f} ({accuracy * 100:.2f}%)")
-print(f"Precision (PR): {precision:.4f} ({precision * 100:.2f}%)")
-print(f"Recall:         {recall:.4f} ({recall * 100:.2f}%)")
+print("Confusion Matrix:")
+print(f"[[{tn}  {fp}]")
+print(f" [{fn} {tp}]]")
 print()
-print("Confusion Matrix (CM):")
-print(cm)
+print("Confusion Matrix Breakdown:")
+print(f"  True Negatives  (TN): {tn:,}  (Correctly classified healthy patients)")
+print(f"  False Positives (FP): {fp:,}     (Healthy patients incorrectly flagged as diabetic)")
+print(f"  False Negatives (FN): {fn:,}  (Diabetic patients missed by the model)")
+print(f"  True Positives  (TP): {tp:,} (Correctly detected diabetic patients)")
 print()
-print("Individual Confusion Matrix Values:")
-print(f"True Negatives (TN):  {tn}")
-print(f"False Positives (FP): {fp}")
-print(f"False Negatives (FN): {fn}")
-print(f"True Positives (TP):  {tp}")
+print("=== MATHEMATICAL VERIFICATION ===")
+print(f"TN + FP + FN + TP = {tn:,} + {fp:,} + {fn:,} + {tp:,} = {cm_sum:,}")
+print(f"TN + FP + FN + TP = number of test records: {is_math_verified}")
+print(f"No missing values: {has_no_missing}")
+print(f"Original diabetes.csv modified: {not orig_unmodified}")
+print(f"ROC curve saved: {roc_img_path}")
 print()
-print("=== CONFUSION MATRIX VERIFICATION ===")
-print(f"TN + FP + FN + TP = {total_tested}")
-print(f"Verification: {is_total_verified}")
-print(f"TN + FP = {tn + fp} (actual Class 0 test samples: {actual_class_0}) -> Verified: {is_class_0_verified}")
-print(f"FN + TP = {fn + tp} (actual Class 1 test samples: {actual_class_1}) -> Verified: {is_class_1_verified}")
+
+print("=== MODEL COMPARISON: LOGISTIC REGRESSION VS RANDOM FOREST ===")
 print()
-print("=== METRIC INTERPRETATIONS ===")
-print(f"- Accuracy:  {accuracy * 100:.2f}% of all test predictions were correct.")
-print(f"- Precision: When the model predicts diabetes, that prediction is correct {precision * 100:.2f}% of the time.")
-print(f"- Recall:    The model successfully detects {recall * 100:.2f}% of all actual diabetes cases.")
-print(f"- TN:        {tn} patients correctly predicted as having no diabetes.")
-print(f"- FP:        {fp} patients predicted as diabetic when the actual class was no diabetes (False Alarms).")
-print(f"- FN:        {fn} patients predicted as having no diabetes when the actual class was diabetes (Missed Diagnoses).")
-print(f"- TP:        {tp} patients correctly predicted as diabetic.")
+print(f"{'Metric':<15} | {'Logistic Regression':<25} | {'Random Forest (Enhanced)':<25}")
+print("-" * 72)
+print(f"{'Accuracy':<15} | {'86.00%':<25} | {f'{acc * 100:.2f}%':<25}")
+print(f"{'Precision':<15} | {'87.55%':<25} | {f'{prec * 100:.2f}%':<25}")
+print(f"{'Recall':<15} | {'89.38%':<25} | {f'{rec * 100:.2f}%':<25}")
+print(f"{'F1-score':<15} | {'Not previously calculated':<25} | {f'{f1 * 100:.2f}%':<25}")
+print(f"{'ROC-AUC':<15} | {'Not previously calculated':<25} | {f'{roc_auc:.4f}':<25}")
+print("-" * 72)
 print()
-print("=== DATASET INTEGRITY ===")
-print(f"Original diabetes.csv modified: {not csv_unmodified}")
+print("Confusion Matrix Comparison:")
+print("Logistic Regression (Baseline 29 Features):")
+print("  [[12951, 3050],")
+print("   [ 2549, 21450]]")
+print(f"Random Forest (Enhanced 39 Features / 10 New Columns):")
+print(f"  [[{tn}, {fp}],")
+print(f"   [{fn}, {tp}]]")
+print()
+print("NOTE ON FEATURE SETS:")
+print("Logistic Regression was evaluated on the baseline 29-feature dataset in Step 6.")
+print("Random Forest is evaluated on the enhanced dataset with 10 added lifestyle & clinical features.")
+print("Both models provide complementary clinical insights: Random Forest achieves near-zero false alarms")
+print("(very high precision), while Logistic Regression maintains strong sensitivity (recall).")

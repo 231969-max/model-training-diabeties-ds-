@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Risk Prediction - Clinical Machine Learning System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- APPLICATION HEADER -->
+        <header class="app-header">
+            <div class="header-main">
+                <div class="header-brand">
+                    <svg class="medical-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <div>
+                        <h1 class="header-title">Diabetes Risk Prediction</h1>
+                        <p class="header-subtitle">Clinical Machine Learning Prediction System &bull; Dual-Model Architecture</p>
+                    </div>
+                </div>
+            </div>
+            <div class="header-metadata">
+                <span class="meta-tag">Random Forest (Accuracy: <strong>91.97%</strong> • Precision: <strong>99.83%</strong>)</span>
+                <span class="meta-sep">|</span>
+                <span class="meta-tag">Logistic Regression (Accuracy: <strong>86.00%</strong> • Recall: <strong>89.38%</strong>)</span>
+                <span class="meta-sep">|</span>
+                <span class="meta-tag">Stratified 60/40 Split (40k Test Records)</span>
+            </div>
+        </header>
+
+        <!-- PREDICTION RESULT CARD (DISPLAYED AFTER SUBMISSION) -->
+        {% if result %}
+        <section id="result-section" class="result-card result-{{ result.status_color }}">
+            {% if result.error %}
+            <div class="result-title-bar">
+                <span class="status-indicator error"></span>
+                <h2 class="result-heading error">Input Processing Error</h2>
+            </div>
+            <p class="result-error-msg">{{ result.error }}</p>
+            {% else %}
+            <div class="result-title-bar">
+                <span class="status-indicator {{ result.status_color }}"></span>
+                <div>
+                    <div class="result-badge-row">
+                        <span class="result-kicker">Prediction Result</span>
+                        <span class="model-used-badge">Generated using: <strong>{{ result.selected_model_name }}</strong></span>
+                    </div>
+                    <h2 class="result-heading">{{ result.status_message }}</h2>
+                </div>
+            </div>
+            
+            <div class="result-metrics-row">
+                <div class="result-metric-box">
+                    <span class="metric-label">Predicted Class</span>
+                    <span class="metric-val class-pill {{ result.status_color }}">Class {{ result.predicted_class }}</span>
+                    <span class="metric-note">{{ result.class_label }}</span>
+                </div>
+                
+                <div class="result-metric-box">
+                    <div class="metric-header">
+                        <span class="metric-label">Healthy / Non-Diabetic Probability</span>
+                        <span class="metric-pct healthy-text">{{ result.prob_0 }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill healthy-fill" style="width: {{ result.prob_0 }}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="result-metric-box">
+                    <div class="metric-header">
+                        <span class="metric-label">Diabetic Probability</span>
+                        <span class="metric-pct diabetic-text">{{ result.prob_1 }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill diabetic-fill" style="width: {{ result.prob_1 }}%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cross-model-note">
+                <span><strong>Cross-Model Check:</strong> {{ result.other_model_name }} estimated <strong>{{ result.other_prob_1 }}%</strong> diabetic risk (Class {{ result.other_class }}).</span>
+            </div>
+            {% endif %}
+            
+            <div class="clinical-disclaimer">
+                <svg class="info-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <span><strong>Important:</strong> This prediction is generated by a machine-learning model and is not a medical diagnosis.</span>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <main class="dashboard-layout">
+            <!-- LEFT COLUMN: PATIENT CLINICAL DATA ENTRY FORM -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Patient Clinical &amp; Lifestyle Information</h2>
+                        <p class="card-description">Select your prediction model and enter patient parameters.</p>
+                    </div>
+                    <div class="preset-group">
+                        <span class="preset-label">Test Case Presets:</span>
+                        <button type="button" class="btn btn-secondary" onclick="loadPreset('healthy')">Healthy Patient Profile</button>
+                        <button type="button" class="btn btn-secondary" onclick="loadPreset('diabetic')">Diabetic Patient Profile</button>
+                    </div>
+                </div>
+
+                <form method="POST" action="/" id="patient-form">
+                    <!-- MODEL SELECTION TOGGLE SECTION -->
+                    <div class="model-toggle-section">
+                        <div class="toggle-header-row">
+                            <div>
+                                <label class="toggle-section-label">Select Prediction Model</label>
+                                <p class="toggle-section-sub">Choose which trained machine-learning model will process patient features</p>
+                            </div>
+                            <!-- SEGMENTED TOGGLE SWITCH BUTTON -->
+                            <div class="model-switch-pill-container" role="radiogroup" aria-label="Model Selection Toggle">
+                                <button type="button" 
+                                        id="toggle-btn-rf" 
+                                        class="model-switch-btn {% if selected_model == 'random_forest' %}active{% endif %}" 
+                                        onclick="setModel('random_forest')">
+                                    <span class="btn-icon">🌲</span> Random Forest
+                                    <span class="pill-badge">99.8% Prec</span>
+                                </button>
+                                <button type="button" 
+                                        id="toggle-btn-lr" 
+                                        class="model-switch-btn {% if selected_model == 'logistic_regression' %}active{% endif %}" 
+                                        onclick="setModel('logistic_regression')">
+                                    <span class="btn-icon">📈</span> Logistic Regression
+                                    <span class="pill-badge">89.4% Rec</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- INTERACTIVE MODEL CARDS -->
+                        <div class="model-selector-grid">
+                            <label class="model-option-card {% if selected_model == 'random_forest' %}active{% endif %}" id="card-random_forest" onclick="setModel('random_forest')">
+                                <input type="radio" name="model_choice" id="radio-rf" value="random_forest" {% if selected_model == 'random_forest' %}checked{% endif %}>
+                                <div class="model-card-body">
+                                    <div class="model-card-header">
+                                        <span class="model-card-title">Random Forest Classifier</span>
+                                        <span class="badge badge-primary">Recommended</span>
+                                    </div>
+                                    <p class="model-card-desc">100 Ensemble Trees &bull; Non-linear patterns &bull; 99.83% Precision</p>
+                                    <div class="model-mini-metrics">
+                                        <span>Accuracy: <strong>91.97%</strong></span>
+                                        <span>Precision: <strong>99.83%</strong></span>
+                                        <span>ROC-AUC: <strong>0.9426</strong></span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="model-option-card {% if selected_model == 'logistic_regression' %}active{% endif %}" id="card-logistic_regression" onclick="setModel('logistic_regression')">
+                                <input type="radio" name="model_choice" id="radio-lr" value="logistic_regression" {% if selected_model == 'logistic_regression' %}checked{% endif %}>
+                                <div class="model-card-body">
+                                    <div class="model-card-header">
+                                        <span class="model-card-title">Logistic Regression</span>
+                                        <span class="badge badge-secondary">High Sensitivity</span>
+                                    </div>
+                                    <p class="model-card-desc">Linear Log-Odds Baseline &bull; 89.38% Recall screening</p>
+                                    <div class="model-mini-metrics">
+                                        <span>Accuracy: <strong>86.00%</strong></span>
+                                        <span>Recall: <strong>89.38%</strong></span>
+                                        <span>ROC-AUC: <strong>0.9341</strong></span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 1: DEMOGRAPHICS -->
+                    <div class="form-section">
+                        <h3 class="section-title">1. Patient Demographics &amp; Social Factors</h3>
+                        <div class="fields-grid">
+                            <div class="field-item">
+                                <label for="age">Age (Years)</label>
+                                <input type="number" id="age" name="age" min="18" max="100" value="{{ form_values['age'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender">
+                                    {% for opt in options['gender'] %}
+                                    <option value="{{ opt }}" {% if form_values['gender'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="ethnicity">Ethnicity</label>
+                                <select id="ethnicity" name="ethnicity">
+                                    {% for opt in options['ethnicity'] %}
+                                    <option value="{{ opt }}" {% if form_values['ethnicity'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="education_level">Education Level</label>
+                                <select id="education_level" name="education_level">
+                                    {% for opt in options['education_level'] %}
+                                    <option value="{{ opt }}" {% if form_values['education_level'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="income_level">Income Level</label>
+                                <select id="income_level" name="income_level">
+                                    {% for opt in options['income_level'] %}
+                                    <option value="{{ opt }}" {% if form_values['income_level'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="employment_status">Employment Status</label>
+                                <select id="employment_status" name="employment_status">
+                                    {% for opt in options['employment_status'] %}
+                                    <option value="{{ opt }}" {% if form_values['employment_status'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: LIFESTYLE & DAILY HABITS -->
+                    <div class="form-section">
+                        <h3 class="section-title">2. Lifestyle &amp; Daily Habits</h3>
+                        <div class="fields-grid">
+                            <div class="field-item">
+                                <label for="smoking_status">Smoking Status</label>
+                                <select id="smoking_status" name="smoking_status">
+                                    {% for opt in options['smoking_status'] %}
+                                    <option value="{{ opt }}" {% if form_values['smoking_status'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="alcohol_consumption_per_week">Alcohol Drinks / Week</label>
+                                <input type="number" id="alcohol_consumption_per_week" name="alcohol_consumption_per_week" min="0" max="50" value="{{ form_values['alcohol_consumption_per_week'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="physical_activity_minutes_per_week">Physical Activity (Min/Week)</label>
+                                <input type="number" id="physical_activity_minutes_per_week" name="physical_activity_minutes_per_week" min="0" max="1000" value="{{ form_values['physical_activity_minutes_per_week'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="daily_steps">Daily Steps Count</label>
+                                <input type="number" id="daily_steps" name="daily_steps" min="500" max="30000" value="{{ form_values['daily_steps'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="diet_score">Diet Quality Score (0 - 10)</label>
+                                <input type="number" step="0.1" id="diet_score" name="diet_score" min="0" max="10" value="{{ form_values['diet_score'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="fruit_vegetable_servings_per_day">Fruit / Veg Servings (Daily)</label>
+                                <input type="number" id="fruit_vegetable_servings_per_day" name="fruit_vegetable_servings_per_day" min="0" max="15" value="{{ form_values['fruit_vegetable_servings_per_day'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="daily_water_intake_liters">Water Intake (Liters/Day)</label>
+                                <input type="number" step="0.1" id="daily_water_intake_liters" name="daily_water_intake_liters" min="0.5" max="8.0" value="{{ form_values['daily_water_intake_liters'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="salt_intake_level">Dietary Salt / Sodium Level</label>
+                                <select id="salt_intake_level" name="salt_intake_level">
+                                    {% for opt in options['salt_intake_level'] %}
+                                    <option value="{{ opt }}" {% if form_values['salt_intake_level'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="sleep_hours_per_day">Sleep Duration (Hours/Day)</label>
+                                <input type="number" step="0.1" id="sleep_hours_per_day" name="sleep_hours_per_day" min="2" max="14" value="{{ form_values['sleep_hours_per_day'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="screen_time_hours_per_day">Screen Time (Hours/Day)</label>
+                                <input type="number" step="0.1" id="screen_time_hours_per_day" name="screen_time_hours_per_day" min="0" max="20" value="{{ form_values['screen_time_hours_per_day'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="stress_level">Chronic Stress Level</label>
+                                <select id="stress_level" name="stress_level">
+                                    {% for opt in options['stress_level'] %}
+                                    <option value="{{ opt }}" {% if form_values['stress_level'] == opt %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: MEDICAL HISTORY -->
+                    <div class="form-section">
+                        <h3 class="section-title">3. Medical History &amp; Health Behaviors</h3>
+                        <div class="fields-grid">
+                            <div class="field-item">
+                                <label for="family_history_diabetes">Family History of Diabetes</label>
+                                <select id="family_history_diabetes" name="family_history_diabetes">
+                                    <option value="0" {% if form_values['family_history_diabetes']|int == 0 %}selected{% endif %}>No (0)</option>
+                                    <option value="1" {% if form_values['family_history_diabetes']|int == 1 %}selected{% endif %}>Yes (1)</option>
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="hypertension_history">Hypertension History</label>
+                                <select id="hypertension_history" name="hypertension_history">
+                                    <option value="0" {% if form_values['hypertension_history']|int == 0 %}selected{% endif %}>No (0)</option>
+                                    <option value="1" {% if form_values['hypertension_history']|int == 1 %}selected{% endif %}>Yes (1)</option>
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="cardiovascular_history">Cardiovascular History</label>
+                                <select id="cardiovascular_history" name="cardiovascular_history">
+                                    <option value="0" {% if form_values['cardiovascular_history']|int == 0 %}selected{% endif %}>No (0)</option>
+                                    <option value="1" {% if form_values['cardiovascular_history']|int == 1 %}selected{% endif %}>Yes (1)</option>
+                                </select>
+                            </div>
+                            <div class="field-item">
+                                <label for="annual_health_checkups">Annual Checkups (Past 2 Yrs)</label>
+                                <input type="number" id="annual_health_checkups" name="annual_health_checkups" min="0" max="10" value="{{ form_values['annual_health_checkups'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="medication_adherence_score">Medication Adherence (1 - 10)</label>
+                                <input type="number" step="0.1" id="medication_adherence_score" name="medication_adherence_score" min="1.0" max="10.0" value="{{ form_values['medication_adherence_score'] }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: VITAL SIGNS & BODY MEASUREMENTS -->
+                    <div class="form-section">
+                        <h3 class="section-title">4. Vital Signs &amp; Anthropometrics</h3>
+                        <div class="fields-grid">
+                            <div class="field-item">
+                                <label for="bmi">Body Mass Index (BMI)</label>
+                                <input type="number" step="0.1" id="bmi" name="bmi" min="10" max="60" value="{{ form_values['bmi'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="waist_circumference_cm">Waist Circumference (cm)</label>
+                                <input type="number" step="0.1" id="waist_circumference_cm" name="waist_circumference_cm" min="50" max="180" value="{{ form_values['waist_circumference_cm'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="waist_to_hip_ratio">Waist-to-Hip Ratio</label>
+                                <input type="number" step="0.01" id="waist_to_hip_ratio" name="waist_to_hip_ratio" min="0.5" max="1.5" value="{{ form_values['waist_to_hip_ratio'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="systolic_bp">Systolic BP (mmHg)</label>
+                                <input type="number" id="systolic_bp" name="systolic_bp" min="70" max="220" value="{{ form_values['systolic_bp'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="diastolic_bp">Diastolic BP (mmHg)</label>
+                                <input type="number" id="diastolic_bp" name="diastolic_bp" min="40" max="140" value="{{ form_values['diastolic_bp'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="heart_rate">Resting Heart Rate (BPM)</label>
+                                <input type="number" id="heart_rate" name="heart_rate" min="40" max="160" value="{{ form_values['heart_rate'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="resting_respiratory_rate">Respiratory Rate (breaths/min)</label>
+                                <input type="number" id="resting_respiratory_rate" name="resting_respiratory_rate" min="8" max="40" value="{{ form_values['resting_respiratory_rate'] }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: CLINICAL LABORATORY BIOMARKERS -->
+                    <div class="form-section">
+                        <h3 class="section-title">5. Clinical Laboratory Biomarkers</h3>
+                        <div class="fields-grid">
+                            <div class="field-item highlight-input">
+                                <label for="glucose_fasting">Fasting Glucose (mg/dL)</label>
+                                <input type="number" id="glucose_fasting" name="glucose_fasting" min="50" max="300" value="{{ form_values['glucose_fasting'] }}" required>
+                            </div>
+                            <div class="field-item highlight-input">
+                                <label for="glucose_postprandial">Postprandial Glucose (mg/dL)</label>
+                                <input type="number" id="glucose_postprandial" name="glucose_postprandial" min="60" max="400" value="{{ form_values['glucose_postprandial'] }}" required>
+                            </div>
+                            <div class="field-item highlight-input">
+                                <label for="hba1c">HbA1c Level (%)</label>
+                                <input type="number" step="0.01" id="hba1c" name="hba1c" min="3.5" max="15.0" value="{{ form_values['hba1c'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="insulin_level">Fasting Insulin (µU/mL)</label>
+                                <input type="number" step="0.1" id="insulin_level" name="insulin_level" min="1.0" max="60.0" value="{{ form_values['insulin_level'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="cholesterol_total">Total Cholesterol (mg/dL)</label>
+                                <input type="number" id="cholesterol_total" name="cholesterol_total" min="80" max="400" value="{{ form_values['cholesterol_total'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="hdl_cholesterol">HDL Cholesterol (mg/dL)</label>
+                                <input type="number" id="hdl_cholesterol" name="hdl_cholesterol" min="15" max="120" value="{{ form_values['hdl_cholesterol'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="ldl_cholesterol">LDL Cholesterol (mg/dL)</label>
+                                <input type="number" id="ldl_cholesterol" name="ldl_cholesterol" min="30" max="300" value="{{ form_values['ldl_cholesterol'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="triglycerides">Triglycerides (mg/dL)</label>
+                                <input type="number" id="triglycerides" name="triglycerides" min="30" max="500" value="{{ form_values['triglycerides'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="vitamin_d_level_ng_ml">Vitamin D (ng/mL)</label>
+                                <input type="number" step="0.1" id="vitamin_d_level_ng_ml" name="vitamin_d_level_ng_ml" min="5.0" max="100.0" value="{{ form_values['vitamin_d_level_ng_ml'] }}" required>
+                            </div>
+                            <div class="field-item">
+                                <label for="diabetes_risk_score">Clinical Risk Score</label>
+                                <input type="number" step="0.1" id="diabetes_risk_score" name="diabetes_risk_score" min="1.0" max="100.0" value="{{ form_values['diabetes_risk_score'] }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT BUTTON -->
+                    <div class="form-footer">
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-predict">
+                            Predict Diabetes Risk
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- RIGHT COLUMN: MODEL COMPARISON & BENCHMARKS -->
+            <aside class="sidebar-layout">
+                <!-- 1. ACTIVE MODEL ARCHITECTURE CARD -->
+                <div class="card sidebar-card">
+                    <h3 class="card-heading">Model Comparison &amp; Benchmarks</h3>
+                    
+                    <div class="model-comp-tabs">
+                        <div class="comp-col {% if selected_model == 'random_forest' %}active-comp{% endif %}">
+                            <div class="comp-title">Random Forest</div>
+                            <div class="comp-stat">Acc: <strong>91.97%</strong></div>
+                            <div class="comp-stat">Prec: <strong>99.83%</strong></div>
+                            <div class="comp-stat">Rec: <strong>86.77%</strong></div>
+                            <div class="comp-badge">Low False Alarms</div>
+                        </div>
+                        <div class="comp-col {% if selected_model == 'logistic_regression' %}active-comp{% endif %}">
+                            <div class="comp-title">Logistic Reg.</div>
+                            <div class="comp-stat">Acc: <strong>86.00%</strong></div>
+                            <div class="comp-stat">Prec: <strong>87.55%</strong></div>
+                            <div class="comp-stat">Rec: <strong>89.38%</strong></div>
+                            <div class="comp-badge">High Sensitivity</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SELECTED MODEL PERFORMANCE SPECS -->
+                <div class="card sidebar-card">
+                    <h3 class="card-heading">Active Model: {{ models[selected_model].name }}</h3>
+                    <div class="stats-table">
+                        <div class="stat-row">
+                            <span class="stat-k">Architecture</span>
+                            <span class="stat-v">{{ models[selected_model].type }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-k">Accuracy</span>
+                            <span class="stat-v highlight-text">{{ models[selected_model].accuracy }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-k">Precision</span>
+                            <span class="stat-v highlight-text">{{ models[selected_model].precision }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-k">Recall (Sensitivity)</span>
+                            <span class="stat-v">{{ models[selected_model].recall }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-k">F1-Score</span>
+                            <span class="stat-v">{{ models[selected_model].f1_score }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-k">ROC-AUC</span>
+                            <span class="stat-v highlight-text">{{ models[selected_model].roc_auc }}</span>
+                        </div>
+                    </div>
+
+                    <div class="cm-container">
+                        <div class="cm-header-label">Confusion Matrix (40,000 Test Records)</div>
+                        <table class="cm-table">
+                            <tr>
+                                <td><span class="cm-tag">TN</span> {{ models[selected_model].tn }}</td>
+                                <td><span class="cm-tag">FP</span> {{ models[selected_model].fp }}</td>
+                            </tr>
+                            <tr>
+                                <td><span class="cm-tag">FN</span> {{ models[selected_model].fn }}</td>
+                                <td><span class="cm-tag">TP</span> {{ models[selected_model].tp }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. ROC CURVE VISUALIZATION CARD -->
+                <div class="card sidebar-card">
+                    <h3 class="card-heading">Empirical ROC Curve</h3>
+                    <div class="roc-frame">
+                        <img src="{{ url_for('static', filename='random_forest_roc_curve.png') }}" alt="Random Forest ROC Curve" class="roc-img">
+                    </div>
+                    <p class="roc-footnote">ROC-AUC = <strong>0.9426</strong> confirms superior class discrimination across all clinical thresholds.</p>
+                </div>
+            </aside>
+        </main>
+
+        <footer class="app-footer">
+            <p>&copy; 2026 Machine Learning Classification Lab &bull; Production Pipelines (<code>random_forest_diabetes_model.pkl</code> &bull; <code>logistic_regression_diabetes_model.pkl</code>)</p>
+            <p class="footer-note">This clinical application is a demonstration of machine-learning classification and is not a substitute for formal medical evaluation.</p>
+        </footer>
+    </div>
+
+    <!-- PRESET LOADER & TOGGLE SCRIPT -->
+    <script>
+        const PRESETS = {
+            healthy: {
+                age: 48,
+                gender: "Female",
+                ethnicity: "White",
+                education_level: "Graduate",
+                income_level: "Middle",
+                employment_status: "Employed",
+                smoking_status: "Never",
+                alcohol_consumption_per_week: 1,
+                physical_activity_minutes_per_week: 180,
+                daily_steps: 8500,
+                diet_score: 8.0,
+                fruit_vegetable_servings_per_day: 5,
+                daily_water_intake_liters: 2.8,
+                salt_intake_level: "Low",
+                sleep_hours_per_day: 7.5,
+                screen_time_hours_per_day: 4.5,
+                stress_level: "Low",
+                family_history_diabetes: 0,
+                hypertension_history: 0,
+                cardiovascular_history: 0,
+                annual_health_checkups: 2,
+                medication_adherence_score: 9.0,
+                bmi: 23.1,
+                waist_circumference_cm: 76.0,
+                waist_to_hip_ratio: 0.78,
+                systolic_bp: 112,
+                diastolic_bp: 72,
+                heart_rate: 65,
+                resting_respiratory_rate: 14,
+                glucose_fasting: 93,
+                glucose_postprandial: 125,
+                hba1c: 5.4,
+                insulin_level: 6.2,
+                cholesterol_total: 175,
+                hdl_cholesterol: 62,
+                ldl_cholesterol: 92,
+                triglycerides: 95,
+                vitamin_d_level_ng_ml: 35.0,
+                diabetes_risk_score: 18.0
+            },
+            diabetic: {
+                age: 58,
+                gender: "Male",
+                ethnicity: "Asian",
+                education_level: "Highschool",
+                income_level: "Low",
+                employment_status: "Employed",
+                smoking_status: "Current",
+                alcohol_consumption_per_week: 5,
+                physical_activity_minutes_per_week: 40,
+                daily_steps: 3200,
+                diet_score: 3.5,
+                fruit_vegetable_servings_per_day: 1,
+                daily_water_intake_liters: 1.5,
+                salt_intake_level: "High",
+                sleep_hours_per_day: 5.5,
+                screen_time_hours_per_day: 9.0,
+                stress_level: "High",
+                family_history_diabetes: 1,
+                hypertension_history: 1,
+                cardiovascular_history: 1,
+                annual_health_checkups: 0,
+                medication_adherence_score: 4.5,
+                bmi: 32.8,
+                waist_circumference_cm: 104.0,
+                waist_to_hip_ratio: 0.96,
+                systolic_bp: 145,
+                diastolic_bp: 92,
+                heart_rate: 84,
+                resting_respiratory_rate: 20,
+                glucose_fasting: 148,
+                glucose_postprandial: 215,
+                hba1c: 8.2,
+                insulin_level: 16.5,
+                cholesterol_total: 235,
+                hdl_cholesterol: 38,
+                ldl_cholesterol: 155,
+                triglycerides: 210,
+                vitamin_d_level_ng_ml: 16.5,
+                diabetes_risk_score: 48.5
+            }
+        };
+
+        function loadPreset(type) {
+            const data = PRESETS[type];
+            if (!data) return;
+            for (const key in data) {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.value = data[key];
+                }
+            }
+        }
+
+        function setModel(modelKey) {
+            // Update radio
+            const rfRadio = document.getElementById('radio-rf');
+            const lrRadio = document.getElementById('radio-lr');
+            if (modelKey === 'random_forest' && rfRadio) {
+                rfRadio.checked = true;
+            } else if (modelKey === 'logistic_regression' && lrRadio) {
+                lrRadio.checked = true;
+            }
+
+            // Update toggle buttons
+            const btnRf = document.getElementById('toggle-btn-rf');
+            const btnLr = document.getElementById('toggle-btn-lr');
+            if (btnRf && btnLr) {
+                btnRf.classList.toggle('active', modelKey === 'random_forest');
+                btnLr.classList.toggle('active', modelKey === 'logistic_regression');
+            }
+
+            // Update cards
+            const cardRf = document.getElementById('card-random_forest');
+            const cardLr = document.getElementById('card-logistic_regression');
+            if (cardRf && cardLr) {
+                cardRf.classList.toggle('active', modelKey === 'random_forest');
+                cardLr.classList.toggle('active', modelKey === 'logistic_regression');
+            }
+
+            // Update submit button text
+            const btnPredict = document.getElementById('btn-predict');
+            if (btnPredict) {
+                if (modelKey === 'random_forest') {
+                    btnPredict.innerHTML = '<span class="btn-icon">🌲</span> Generate Prediction with Random Forest (99.8% Precision)';
+                } else {
+                    btnPredict.innerHTML = '<span class="btn-icon">📈</span> Generate Prediction with Logistic Regression (89.4% Recall)';
+                }
+            }
+        }
+
+        // Initialize state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkedRadio = document.querySelector('input[name="model_choice"]:checked');
+            const initialModel = checkedRadio ? checkedRadio.value : 'random_forest';
+            setModel(initialModel);
+        });
+    </script>
+</body>
+</html>
