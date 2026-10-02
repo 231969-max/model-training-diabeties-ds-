@@ -2,6 +2,9 @@
 
 An end-to-end Machine Learning clinical classification system and web application built on **100,000 patient records**. This project compares an ensemble model (**Random Forest Classifier**) and a linear probability baseline (**Logistic Regression**) across **39 raw patient features** (standardized and one-hot encoded) to predict diabetes diagnosis (`diagnosed_diabetes`), deployed with an interactive, clinical-grade web dashboard.
 
+// Changing this section
+Logistic regression model used
+
 ---
 
 ## 📊 Project Overview & Highlights
