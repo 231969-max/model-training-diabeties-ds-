@@ -1,0 +1,27 @@
+{
+    "accuracy": 0.9193333333333333,
+    "roc_auc": 0.9417945925925926,
+    "class_0": {
+        "precision": 0.8344037978218375,
+        "recall": 0.996,
+        "f1_score": 0.9080686825710378
+    },
+    "class_1": {
+        "precision": 0.996937994386323,
+        "recall": 0.8682222222222222,
+        "f1_score": 0.9281387338163677
+    },
+    "macro_f1": 0.9181037081937027,
+    "weighted_f1": 0.9201107133182358,
+    "classification_report": "                  precision    recall  f1-score   support\n\nNon-Diabetic (0)     0.8344    0.9960    0.9081      6000\n    Diabetic (1)     0.9969    0.8682    0.9281      9000\n\n        accuracy                         0.9193     15000\n       macro avg     0.9157    0.9321    0.9181     15000\n    weighted avg     0.9319    0.9193    0.9201     15000\n",
+    "confusion_matrix": [
+        [
+            5976,
+            24
+        ],
+        [
+            1186,
+            7814
+        ]
+    ]
+}

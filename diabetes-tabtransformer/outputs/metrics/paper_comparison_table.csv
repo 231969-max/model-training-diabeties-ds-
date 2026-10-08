@@ -1,0 +1,9 @@
+Metric / Target,Paper Reported,Reproduced Result,Difference
+Overall Accuracy,82.55%,91.93%,+9.38%
+Class 0 (Non-Diabetic) Precision,0.7716,0.8344,+0.0628
+Class 0 (Non-Diabetic) Recall,0.8006,0.9960,+0.1954
+Class 0 (Non-Diabetic) F1-score,0.7858,0.9081,+0.1223
+Class 1 (Diabetic) Precision,0.8637,0.9969,+0.1332
+Class 1 (Diabetic) Recall,0.8420,0.8682,+0.0262
+Class 1 (Diabetic) F1-score,0.8527,0.9281,+0.0754
+ROC-AUC Score,0.9009,0.9418,+0.0409

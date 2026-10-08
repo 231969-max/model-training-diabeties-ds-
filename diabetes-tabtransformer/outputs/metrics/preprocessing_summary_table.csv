@@ -1,0 +1,3 @@
+Stage,Number of Rows,Number of Columns,Description
+Before preprocessing,"100,000",31,Raw dataset after loading process from CSV file
+After drop leakage & missing target,"69,999",31,Several columns that could potentially cause data leaks as well as untargeted rows were deleted.

@@ -2,9 +2,6 @@
 
 **Paper Reference**: Al Khaidar & Sri Kurnia, *Journal of Computer Science Research (JoCoSiR)*, Vol. 2, No. 2, pp. 9–15. DOI: [10.65126/jocosir.v2i2.52](http://doi.org/10.65126/jocosir.v2i2.52)
 
-// Changing this section
-Logistic regression model used
-
 ---
 
 ## 1. Research Objective
@@ -226,11 +223,11 @@ pip install -r requirements.txt
 
 ### 2. Run Master Experiment
 ```bash
-python diabetes-tabtransformer/main.py
+python main.py
 ```
 
 ### 3. Interactive Jupyter Notebook
 Open and execute:
 ```bash
-jupyter notebook diabetes-tabtransformer/notebooks/diabetes_tabtransformer.ipynb
+jupyter notebook notebooks/diabetes_tabtransformer.ipynb
 ```
