@@ -1,0 +1,4 @@
+Experiment,Model,CA (Accuracy),Weighted F1,Macro F1,Weighted Prec,Weighted Recall,MCC,OvR AUC
+Experiment A (Faithful Reproduction),Random Forest (with Leakage),0.9960,0.9940,0.5987,0.9920,0.9960,0.9925,0.9972
+Experiment B (Improved / Leakage-Free),Random Forest (Leakage-Free),0.9173,0.9163,0.5501,0.9266,0.9173,0.8605,0.9484
+Experiment B (Improved / Leakage-Free),Balanced Random Forest,0.9162,0.9152,0.5496,0.9259,0.9162,0.8588,0.9470

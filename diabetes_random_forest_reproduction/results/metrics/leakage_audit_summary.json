@@ -1,0 +1,121 @@
+{
+    "top_10_features_by_importance": [
+        {
+            "feature": "diagnosed_diabetes",
+            "importance": 0.4480922077327963
+        },
+        {
+            "feature": "hba1c",
+            "importance": 0.27579763939571245
+        },
+        {
+            "feature": "glucose_fasting",
+            "importance": 0.11576631475645138
+        },
+        {
+            "feature": "glucose_postprandial",
+            "importance": 0.09973416478880998
+        },
+        {
+            "feature": "diabetes_risk_score",
+            "importance": 0.010448262347407436
+        },
+        {
+            "feature": "age",
+            "importance": 0.003992722128806246
+        },
+        {
+            "feature": "family_history_diabetes",
+            "importance": 0.003888083450181341
+        },
+        {
+            "feature": "physical_activity_minutes_per_week",
+            "importance": 0.0036567171532718985
+        },
+        {
+            "feature": "bmi",
+            "importance": 0.003000232507400897
+        },
+        {
+            "feature": "triglycerides",
+            "importance": 0.002680059296459577
+        }
+    ],
+    "diagnosed_diabetes_importance": 0.4480922077327963,
+    "diagnosed_diabetes_crosstab": {
+        "Gestational": {
+            "0": 120,
+            "1": 158,
+            "All": 278
+        },
+        "No Diabetes": {
+            "0": 7981,
+            "1": 0,
+            "All": 7981
+        },
+        "Pre-Diabetes": {
+            "0": 31845,
+            "1": 0,
+            "All": 31845
+        },
+        "Type 1": {
+            "0": 56,
+            "1": 66,
+            "All": 122
+        },
+        "Type 2": {
+            "0": 0,
+            "1": 59774,
+            "All": 59774
+        },
+        "All": {
+            "0": 40002,
+            "1": 59998,
+            "All": 100000
+        }
+    },
+    "top_mutual_information_features": [
+        [
+            "diagnosed_diabetes",
+            0.6702773424275256
+        ],
+        [
+            "hba1c",
+            0.563239772156507
+        ],
+        [
+            "glucose_postprandial",
+            0.3508287788035248
+        ],
+        [
+            "glucose_fasting",
+            0.2692513090999463
+        ],
+        [
+            "diabetes_risk_score",
+            0.05888559531746729
+        ],
+        [
+            "insulin_level",
+            0.03341165936439337
+        ],
+        [
+            "family_history_diabetes",
+            0.023877858936128437
+        ],
+        [
+            "age",
+            0.01705276326294885
+        ],
+        [
+            "physical_activity_minutes_per_week",
+            0.016717536194815134
+        ],
+        [
+            "bmi",
+            0.0105485024741074
+        ]
+    ],
+    "leakage_severity": "CRITICAL",
+    "explanation": "1. 'diagnosed_diabetes' is a direct categorical proxy for the target 'diabetes_stage'. When diagnosed_diabetes=0, patient is 100% Non-Diabetic or Pre-Diabetic (never Type 1 or Type 2). When diagnosed_diabetes=1, patient is 100% Type 2 or Type 1 (never No Diabetes or Pre-Diabetes). 2. 'diabetes_risk_score' is a composite risk formula calculated directly from clinical diagnosis rules. 3. Clinical lab thresholds (fasting glucose >= 126 mg/dL, HbA1c >= 6.5%) deterministically map to diabetes stages, allowing the Decision Tree and Random Forest to achieve an artificial ~99.6% accuracy."
+}
