@@ -11,9 +11,16 @@ Flask application supporting model selection toggle between:
 import os
 import joblib
 import pandas as pd
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, make_response
 
 app = Flask(__name__)
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept'
+    return response
 
 # -----------------------------------------------------------------------------
 # 1. Load Pre-Trained Pipeline Models at Startup
@@ -212,6 +219,104 @@ def index():
         models=MODEL_SPECS,
         selected_model=selected_model_key
     )
+
+# -----------------------------------------------------------------------------
+# REST API Endpoints for Angular Frontend & Automated Testing
+# -----------------------------------------------------------------------------
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
+def api_health():
+    if request.method == 'OPTIONS':
+        return make_response('', 204)
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Diabetes Prediction Clinical API',
+        'models_available': ['random_forest', 'logistic_regression'],
+        'default_model': 'random_forest'
+    })
+
+@app.route('/api/models', methods=['GET', 'OPTIONS'])
+def api_models():
+    if request.method == 'OPTIONS':
+        return make_response('', 204)
+    return jsonify({
+        'models': MODEL_SPECS
+    })
+
+@app.route('/api/defaults', methods=['GET', 'OPTIONS'])
+def api_defaults():
+    if request.method == 'OPTIONS':
+        return make_response('', 204)
+    return jsonify({
+        'defaults': DEFAULT_FORM_VALUES,
+        'options': CATEGORICAL_OPTIONS
+    })
+
+@app.route('/api/predict', methods=['POST', 'OPTIONS'])
+def api_predict():
+    if request.method == 'OPTIONS':
+        return make_response('', 204)
+        
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    selected_model_key = data.get('model_choice', 'random_forest')
+    if selected_model_key not in MODEL_SPECS:
+        selected_model_key = 'random_forest'
+
+    active_model = rf_model if selected_model_key == 'random_forest' else lr_model
+    other_model = lr_model if selected_model_key == 'random_forest' else rf_model
+    other_model_name = "Logistic Regression" if selected_model_key == 'random_forest' else "Random Forest"
+
+    try:
+        input_dict = {}
+        for col in NUMERICAL_COLS:
+            val = data.get(col, DEFAULT_FORM_VALUES.get(col, 0))
+            if isinstance(val, (int, float)):
+                input_dict[col] = float(val) if '.' in str(val) else int(val)
+            else:
+                raw_str = str(val).strip()
+                input_dict[col] = float(raw_str) if '.' in raw_str else int(raw_str)
+
+        for col in CATEGORICAL_COLS:
+            input_dict[col] = str(data.get(col, CATEGORICAL_OPTIONS[col][0]))
+
+        input_df = pd.DataFrame([input_dict])
+
+        # Active model prediction
+        pred_class = int(active_model.predict(input_df)[0])
+        pred_proba = active_model.predict_proba(input_df)[0]
+        prob_0 = float(pred_proba[0] * 100)
+        prob_1 = float(pred_proba[1] * 100)
+
+        # Shadow model prediction for comparative validation
+        other_class = int(other_model.predict(input_df)[0])
+        other_proba = other_model.predict_proba(input_df)[0]
+        other_prob_1 = float(other_proba[1] * 100)
+
+        status_message = "Diabetes risk detected (Class 1)." if pred_class == 1 else "Diabetes risk not detected (Class 0)."
+
+        return jsonify({
+            'success': True,
+            'model_key': selected_model_key,
+            'model_name': MODEL_SPECS[selected_model_key]['name'],
+            'model_badge': MODEL_SPECS[selected_model_key]['badge'],
+            'prediction': pred_class,
+            'label': 'Diabetic (Class 1)' if pred_class == 1 else 'Healthy / Non-Diabetic (Class 0)',
+            'probability_non_diabetic': round(prob_0, 2),
+            'probability_diabetic': round(prob_1, 2),
+            'confidence': round(max(prob_0, prob_1), 2),
+            'status_message': status_message,
+            'status_level': 'danger' if pred_class == 1 else 'success',
+            'shadow_model': {
+                'name': other_model_name,
+                'prediction': other_class,
+                'probability_diabetic': round(other_prob_1, 2)
+            },
+            'model_metrics': MODEL_SPECS[selected_model_key]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
 
 if __name__ == '__main__':
     print("Starting Diabetes Risk Prediction Dual-Model Flask App on http://127.0.0.1:5000")

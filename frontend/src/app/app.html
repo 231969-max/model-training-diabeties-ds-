@@ -1,0 +1,408 @@
+<div class="dashboard-container">
+  <!-- Top Navigation / Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div>
+          <h1 id="dashboard-title">{{ appTitle() }}</h1>
+          <p class="subtitle">Dual-Model Machine Learning Engine (Random Forest &amp; Logistic Regression)</p>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <div class="badge-tag live-badge" id="live-cicd-status">
+          <span class="status-dot pulsing"></span>
+          <span>{{ labVerificationBadge() }}</span>
+        </div>
+        <div class="badge-tag version-badge">
+          <span>Release: {{ pipelineVersion() }}</span>
+        </div>
+        <div class="badge-tag backend-badge" [ngClass]="{'connected': backendStatus() === 'connected', 'offline': backendStatus() === 'offline'}">
+          <span class="status-dot" [ngClass]="backendStatus() === 'connected' ? 'dot-green' : 'dot-blue'"></span>
+          <span>{{ backendStatus() === 'connected' ? 'Flask Backend (Port 5000)' : 'GitHub Pages Standalone' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Lab Verification Interactive Banner -->
+    <div class="lab-verification-banner" id="lab-verification-box">
+      <div class="lab-banner-header">
+        <span class="lab-icon">🔬</span>
+        <strong>LAB DEMONSTRATION &amp; CI/CD VERIFICATION TARGET</strong>
+      </div>
+      <p class="lab-text">
+        To demonstrate the automated CI/CD pipeline for the evaluation session: modify any text, CSS color, or metric in 
+        <code>frontend/src/app/app.html</code>, <code>app.css</code>, or <code>app.ts</code> in VS Code, then run:
+        <span class="code-pill">git commit -am "test: verify ci/cd pipeline"</span> &amp; <span class="code-pill">git push origin main</span>.
+      </p>
+      <div class="workflow-steps">
+        <div class="step-chip active"><span class="step-num">1</span> Code Modification (VS Code)</div>
+        <div class="step-arrow">&rarr;</div>
+        <div class="step-chip active"><span class="step-num">2</span> Git Commit &amp; Push</div>
+        <div class="step-arrow">&rarr;</div>
+        <div class="step-chip active"><span class="step-num">3</span> GitHub Actions CI (Build &amp; Test)</div>
+        <div class="step-arrow">&rarr;</div>
+        <div class="step-chip active"><span class="step-num">4</span> Automatic CD Deployment</div>
+        <div class="step-arrow">&rarr;</div>
+        <div class="step-chip active"><span class="step-num">5</span> Updated GitHub Pages Website</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <!-- Left Column: Input Form and Model Selector -->
+    <section class="form-column">
+      
+      <!-- Model Selector Section -->
+      <div class="card model-selector-card">
+        <h2 class="card-title">1. Select Machine Learning Pipeline</h2>
+        <div class="model-grid">
+          <button 
+            type="button" 
+            class="model-card-btn" 
+            [class.selected]="selectedModelKey === 'random_forest'"
+            (click)="selectModel('random_forest')"
+            id="select-rf-btn">
+            <div class="model-badge-row">
+              <span class="badge-type">Ensemble (100 Trees)</span>
+              <span class="badge-stat">99.83% Prec.</span>
+            </div>
+            <h3>Random Forest Classifier</h3>
+            <p class="model-desc">Highest precision &amp; lowest false-alarm rate (only 36 FP in 40,000 cases). Ideal for definitive diagnosis.</p>
+          </button>
+
+          <button 
+            type="button" 
+            class="model-card-btn" 
+            [class.selected]="selectedModelKey === 'logistic_regression'"
+            (click)="selectModel('logistic_regression')"
+            id="select-lr-btn">
+            <div class="model-badge-row">
+              <span class="badge-type">Linear Baseline</span>
+              <span class="badge-stat">89.38% Recall</span>
+            </div>
+            <h3>Logistic Regression</h3>
+            <p class="model-desc">High sensitivity &amp; recall for wide-scale screening to catch early onset cases.</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Patient Profile Presets -->
+      <div class="card presets-card">
+        <div class="presets-header">
+          <h2 class="card-title">2. Quick Load Patient Profiles</h2>
+          <span class="preset-hint">Populates all 39 clinical indicators</span>
+        </div>
+        <div class="preset-buttons">
+          <button type="button" class="preset-btn btn-healthy" (click)="loadPreset('healthy')">
+            <span>🟢 Healthy Profile (Low Risk)</span>
+          </button>
+          <button type="button" class="preset-btn btn-borderline" (click)="loadPreset('borderline')">
+            <span>🟡 Pre-Diabetic (Borderline)</span>
+          </button>
+          <button type="button" class="preset-btn btn-diabetic" (click)="loadPreset('diabetic')">
+            <span>🔴 Diabetic Profile (High Risk)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Clinical Parameters Form -->
+      <form class="card form-card" (ngSubmit)="runPrediction()">
+        <h2 class="card-title">3. Clinical Parameters &amp; Biomarkers</h2>
+
+        <!-- Section A: Primary Biomarkers -->
+        <fieldset class="form-fieldset">
+          <legend class="fieldset-legend">Biochemical Lab Biomarkers (Critical Features)</legend>
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="glucose_fasting">Fasting Glucose (mg/dL)</label>
+              <input type="number" id="glucose_fasting" name="glucose_fasting" [(ngModel)]="formData.glucose_fasting" step="0.1" required>
+              <span class="field-hint">Normal: &lt;100 | Diabetic: &ge;126</span>
+            </div>
+
+            <div class="form-group">
+              <label for="glucose_postprandial">Postprandial Glucose (mg/dL)</label>
+              <input type="number" id="glucose_postprandial" name="glucose_postprandial" [(ngModel)]="formData.glucose_postprandial" step="0.1" required>
+              <span class="field-hint">Normal: &lt;140 | Diabetic: &ge;200</span>
+            </div>
+
+            <div class="form-group">
+              <label for="hba1c">HbA1c Level (%)</label>
+              <input type="number" id="hba1c" name="hba1c" [(ngModel)]="formData.hba1c" step="0.1" required>
+              <span class="field-hint">Normal: &lt;5.7% | Diabetic: &ge;6.5%</span>
+            </div>
+
+            <div class="form-group">
+              <label for="insulin_level">Insulin Level (&mu;IU/mL)</label>
+              <input type="number" id="insulin_level" name="insulin_level" [(ngModel)]="formData.insulin_level" step="0.1">
+              <span class="field-hint">Fasting: 2.6 - 24.9</span>
+            </div>
+
+            <div class="form-group">
+              <label for="diabetes_risk_score">Calculated Risk Score (0-100)</label>
+              <input type="number" id="diabetes_risk_score" name="diabetes_risk_score" [(ngModel)]="formData.diabetes_risk_score" step="0.1">
+              <span class="field-hint">Composite Clinical Score</span>
+            </div>
+
+            <div class="form-group">
+              <label for="cholesterol_total">Total Cholesterol (mg/dL)</label>
+              <input type="number" id="cholesterol_total" name="cholesterol_total" [(ngModel)]="formData.cholesterol_total">
+            </div>
+
+            <div class="form-group">
+              <label for="hdl_cholesterol">HDL Cholesterol (mg/dL)</label>
+              <input type="number" id="hdl_cholesterol" name="hdl_cholesterol" [(ngModel)]="formData.hdl_cholesterol">
+            </div>
+
+            <div class="form-group">
+              <label for="ldl_cholesterol">LDL Cholesterol (mg/dL)</label>
+              <input type="number" id="ldl_cholesterol" name="ldl_cholesterol" [(ngModel)]="formData.ldl_cholesterol">
+            </div>
+
+            <div class="form-group">
+              <label for="triglycerides">Triglycerides (mg/dL)</label>
+              <input type="number" id="triglycerides" name="triglycerides" [(ngModel)]="formData.triglycerides">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Section B: Physical & Vitals -->
+        <fieldset class="form-fieldset">
+          <legend class="fieldset-legend">Anthropometrics &amp; Vitals</legend>
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="bmi">BMI (kg/m&sup2;)</label>
+              <input type="number" id="bmi" name="bmi" [(ngModel)]="formData.bmi" step="0.1" required>
+              <span class="field-hint">Normal: 18.5 - 24.9</span>
+            </div>
+
+            <div class="form-group">
+              <label for="systolic_bp">Systolic BP (mmHg)</label>
+              <input type="number" id="systolic_bp" name="systolic_bp" [(ngModel)]="formData.systolic_bp" required>
+            </div>
+
+            <div class="form-group">
+              <label for="diastolic_bp">Diastolic BP (mmHg)</label>
+              <input type="number" id="diastolic_bp" name="diastolic_bp" [(ngModel)]="formData.diastolic_bp" required>
+            </div>
+
+            <div class="form-group">
+              <label for="waist_circumference_cm">Waist Circumference (cm)</label>
+              <input type="number" id="waist_circumference_cm" name="waist_circumference_cm" [(ngModel)]="formData.waist_circumference_cm" step="0.1">
+            </div>
+
+            <div class="form-group">
+              <label for="waist_to_hip_ratio">Waist-to-Hip Ratio</label>
+              <input type="number" id="waist_to_hip_ratio" name="waist_to_hip_ratio" [(ngModel)]="formData.waist_to_hip_ratio" step="0.01">
+            </div>
+
+            <div class="form-group">
+              <label for="heart_rate">Heart Rate (bpm)</label>
+              <input type="number" id="heart_rate" name="heart_rate" [(ngModel)]="formData.heart_rate">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Section C: Demographics & History -->
+        <fieldset class="form-fieldset">
+          <legend class="fieldset-legend">Demographics &amp; Clinical History</legend>
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="age">Age (Years)</label>
+              <input type="number" id="age" name="age" [(ngModel)]="formData.age" required>
+            </div>
+
+            <div class="form-group">
+              <label for="gender">Gender</label>
+              <select id="gender" name="gender" [(ngModel)]="formData.gender">
+                <option *ngFor="let opt of categoricalOptions.gender" [value]="opt">{{ opt }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="smoking_status">Smoking Status</label>
+              <select id="smoking_status" name="smoking_status" [(ngModel)]="formData.smoking_status">
+                <option *ngFor="let opt of categoricalOptions.smoking_status" [value]="opt">{{ opt }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="family_history_diabetes">Family History Diabetes</label>
+              <select id="family_history_diabetes" name="family_history_diabetes" [(ngModel)]="formData.family_history_diabetes">
+                <option [ngValue]="0">No History (0)</option>
+                <option [ngValue]="1">Positive Family History (1)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="hypertension_history">Hypertension History</label>
+              <select id="hypertension_history" name="hypertension_history" [(ngModel)]="formData.hypertension_history">
+                <option [ngValue]="0">No (0)</option>
+                <option [ngValue]="1">Yes (1)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cardiovascular_history">Cardiovascular History</label>
+              <select id="cardiovascular_history" name="cardiovascular_history" [(ngModel)]="formData.cardiovascular_history">
+                <option [ngValue]="0">No (0)</option>
+                <option [ngValue]="1">Yes (1)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="physical_activity_minutes_per_week">Physical Activity (Min/Week)</label>
+              <input type="number" id="physical_activity_minutes_per_week" name="physical_activity_minutes_per_week" [(ngModel)]="formData.physical_activity_minutes_per_week">
+            </div>
+
+            <div class="form-group">
+              <label for="diet_score">Diet Quality Score (0-10)</label>
+              <input type="number" id="diet_score" name="diet_score" [(ngModel)]="formData.diet_score" step="0.1">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Submit Button -->
+        <div class="submit-row">
+          <button type="submit" class="primary-btn submit-btn" [disabled]="isSubmitting" id="predict-submit-btn">
+            <span *ngIf="!isSubmitting">⚡ Evaluate Clinical Risk Prediction</span>
+            <span *ngIf="isSubmitting" class="loading-state">
+              <span class="spinner"></span> Computing Predictions...
+            </span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Right Column: Results & Metrics -->
+    <section class="results-column">
+      
+      <!-- Primary Prediction Outcome Card -->
+      <div class="card result-card" *ngIf="predictionResult" id="prediction-result-display">
+        <div class="result-header">
+          <span class="model-in-use-tag">{{ predictionResult.model_name }}</span>
+          <span class="source-tag" [ngClass]="predictionResult.source">
+            {{ predictionResult.source === 'live-flask-api' ? '⚡ Live Flask API' : '🛡️ Built-in Engine' }}
+          </span>
+        </div>
+
+        <div class="result-status-box" [ngClass]="predictionResult.status_level">
+          <div class="status-icon">
+            {{ predictionResult.prediction === 1 ? '⚠️' : '✅' }}
+          </div>
+          <div class="status-details">
+            <h2 class="result-label" id="result-label">{{ predictionResult.label }}</h2>
+            <p class="status-msg">{{ predictionResult.status_message }}</p>
+          </div>
+        </div>
+
+        <!-- Probability Meter -->
+        <div class="probability-section">
+          <div class="prob-labels">
+            <span>Healthy Probability: <strong>{{ predictionResult.prob_0 }}%</strong></span>
+            <span>Diabetic Risk: <strong>{{ predictionResult.prob_1 }}%</strong></span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-fill healthy-fill" [style.width.%]="predictionResult.prob_0"></div>
+            <div class="progress-fill diabetic-fill" [style.width.%]="predictionResult.prob_1"></div>
+          </div>
+        </div>
+
+        <!-- Comparative Shadow Model Insight -->
+        <div class="shadow-model-box">
+          <div class="shadow-header">
+            <span class="shadow-title">Cross-Model Cross-Validation:</span>
+            <span class="shadow-model-name">{{ predictionResult.shadow_model.name }}</span>
+          </div>
+          <p class="shadow-desc">
+            Comparative baseline estimates diabetic probability at <strong>{{ predictionResult.shadow_model.prob_1 }}%</strong> 
+            ({{ predictionResult.shadow_model.prediction === 1 ? 'Diabetic Class 1' : 'Non-Diabetic Class 0' }}).
+          </p>
+        </div>
+      </div>
+
+      <!-- Verified Benchmark Metrics Card -->
+      <div class="card metrics-card" *ngIf="predictionResult">
+        <h2 class="card-title">4. Model Benchmark Performance (40k Cases)</h2>
+        <div class="metrics-grid">
+          <div class="metric-tile">
+            <span class="tile-label">Accuracy</span>
+            <span class="tile-value">{{ predictionResult.metrics.accuracy }}</span>
+          </div>
+          <div class="metric-tile highlight">
+            <span class="tile-label">Precision</span>
+            <span class="tile-value text-emerald">{{ predictionResult.metrics.precision }}</span>
+          </div>
+          <div class="metric-tile">
+            <span class="tile-label">Recall</span>
+            <span class="tile-value text-cyan">{{ predictionResult.metrics.recall }}</span>
+          </div>
+          <div class="metric-tile">
+            <span class="tile-label">ROC-AUC</span>
+            <span class="tile-value text-amber">{{ predictionResult.metrics.roc_auc }}</span>
+          </div>
+        </div>
+
+        <div class="cm-table-container">
+          <h3 class="cm-title">Test Confusion Matrix (N=40,000)</h3>
+          <table class="cm-table">
+            <thead>
+              <tr>
+                <th>Actual \ Predicted</th>
+                <th>Predicted Negative</th>
+                <th>Predicted Positive</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Actual Negative (0)</strong></td>
+                <td class="cm-cell tn">TN: {{ predictionResult.metrics.tn }}</td>
+                <td class="cm-cell fp">FP: {{ predictionResult.metrics.fp }}</td>
+              </tr>
+              <tr>
+                <td><strong>Actual Positive (1)</strong></td>
+                <td class="cm-cell fn">FN: {{ predictionResult.metrics.fn }}</td>
+                <td class="cm-cell tp">TP: {{ predictionResult.metrics.tp }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CI/CD Architecture Summary Card -->
+      <div class="card pipeline-card">
+        <h2 class="card-title">5. Automated CI/CD Pipeline Summary</h2>
+        <ul class="pipeline-list">
+          <li>
+            <span class="list-bullet">✓</span>
+            <div>
+              <strong>CI Validation:</strong> GitHub Actions triggers on every git push to <code>main</code>, running linting, test suites, and Angular production builds.
+            </div>
+          </li>
+          <li>
+            <span class="list-bullet">✓</span>
+            <div>
+              <strong>CD Deployment:</strong> Automatic zero-downtime deployment to GitHub Pages via native GitHub Pages action.
+            </div>
+          </li>
+          <li>
+            <span class="list-bullet">✓</span>
+            <div>
+              <strong>Flask REST API:</strong> Dual-model Python service exposing <code>/api/predict</code> with CORS and robust error handling.
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Clinical Diabetes Risk Predictor &bull; Angular Frontend &amp; Flask Backend Monorepo &bull; Automated GitHub CI/CD</p>
+  </footer>
+</div>

@@ -43,4 +43,28 @@ assert b'Prediction Result' in response_lr.data
 assert b'Logistic Regression' in response_lr.data
 print("POST / (Logistic Regression) passed successfully.")
 
-print("\nALL DUAL MODEL TESTS PASSED!")
+print("4. Testing GET /api/health...")
+res_health = client.get('/api/health')
+assert res_health.status_code == 200
+assert res_health.json['status'] == 'healthy'
+print("GET /api/health passed successfully.")
+
+print("5. Testing GET /api/models...")
+res_models = client.get('/api/models')
+assert res_models.status_code == 200
+assert 'random_forest' in res_models.json['models']
+assert 'logistic_regression' in res_models.json['models']
+print("GET /api/models passed successfully.")
+
+print("6. Testing POST /api/predict with JSON payload (Random Forest)...")
+res_api_pred = client.post('/api/predict', json={
+    **flask_app.DEFAULT_FORM_VALUES,
+    'model_choice': 'random_forest'
+})
+assert res_api_pred.status_code == 200
+assert res_api_pred.json['success'] is True
+assert 'prediction' in res_api_pred.json
+assert 'probability_diabetic' in res_api_pred.json
+print("POST /api/predict passed successfully.")
+
+print("\nALL FLASK APP & API TESTS PASSED!")

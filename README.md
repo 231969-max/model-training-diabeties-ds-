@@ -1,9 +1,44 @@
-# Classification of Health Indicators for Diabetes Mellitus Prediction Using a TabTransformer Model on Clinical Tabular Data
+# Clinical Diabetes Risk Prediction System & Automated CI/CD Pipeline
 
-**Paper Reference**: Al Khaidar & Sri Kurnia, *Journal of Computer Science Research (JoCoSiR)*, Vol. 2, No. 2, pp. 9–15. DOI: [10.65126/jocosir.v2i2.52](http://doi.org/10.65126/jocosir.v2i2.52)
+[![CI/CD Pipeline](https://github.com/231969-max/model-training-diabeties-ds-/actions/workflows/deploy.yml/badge.svg)](https://github.com/231969-max/model-training-diabeties-ds-/actions/workflows/deploy.yml)
+[![Live GitHub Pages](https://img.shields.io/badge/Live%20Website-GitHub%20Pages-brightgreen)](https://231969-max.github.io/model-training-diabeties-ds-/)
+[![Frontend](https://img.shields.io/badge/Frontend-Angular%20Standalone-dd0031)](frontend)
+[![Backend](https://img.shields.io/badge/Backend-Flask%20REST%20API-000000)](app.py)
 
-// Changing this section
-Logistic regression model used
+**Live Deployed Application**: [https://231969-max.github.io/model-training-diabeties-ds-/](https://231969-max.github.io/model-training-diabeties-ds-/)
+
+---
+
+## 🚀 Lab Requirement: CI/CD Automated Deployment
+
+### Automated Workflow Pipeline Architecture:
+$$\text{Code Modification} \longrightarrow \text{Git Commit \& Push} \longrightarrow \text{GitHub Actions CI (Test \& Build)} \longrightarrow \text{Automatic CD (GitHub Pages)} \longrightarrow \text{Live Website Updated}$$
+
+1. **Frontend**: Standalone **Angular** clinical dashboard (`frontend/`) with real-time probability meters, clinical preset profiles, and dual-model evaluator (Random Forest & Logistic Regression).
+2. **Backend**: Python **Flask REST API** (`app.py`) providing `/api/predict`, `/api/health`, and `/api/models` with CORS integration.
+3. **CI Validation**: GitHub Actions automatically triggers on push to `main`:
+   - Runs Flask backend tests (`python test_app.py`)
+   - Installs frontend packages (`npm ci`)
+   - Runs Angular unit tests (`npm run test:ci` via Vitest)
+   - Builds optimized production bundles with base-href (`npm run build:gh-pages`)
+4. **CD Deployment**: Automatically deploys the production bundle to GitHub Pages (`actions/deploy-pages@v4` & `peaceiris/actions-gh-pages@v4`).
+
+### 🔬 Live Lab Demonstration Step-by-Step:
+1. Open VS Code in this repository.
+2. Make a small visible change in any frontend file:
+   - In `frontend/src/app/app.html`, change the banner title or subtitle text.
+   - Or in `frontend/src/app/app.css`, change an accent color (e.g. `--primary` or `--accent-emerald`).
+   - Or in `frontend/src/app/app.ts`, change `pipelineVersion` or `labVerificationBadge`.
+3. Commit and push the change to GitHub:
+   ```bash
+   git add .
+   git commit -m "feat: lab live demo code update"
+   git push origin main
+   ```
+4. Open the **Actions** tab on GitHub:
+   - Observe **CI - Validation & Build** succeed.
+   - Observe **CD - Deployment to GitHub Pages** deploy automatically.
+5. Refresh the live site: [https://231969-max.github.io/model-training-diabeties-ds-/](https://231969-max.github.io/model-training-diabeties-ds-/) and verify the change is live!
 
 ---
 
