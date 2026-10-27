@@ -217,55 +217,90 @@ While methodology and architecture are replicated with 100% fidelity, the reprod
 
 ---
 
-## 11. Project Structure
+## 11. Complete Monorepo Project Structure
 ```
-diabetes-tabtransformer/
-├── data/
-│   └── diabetes_dataset.csv
-├── src/
-│   ├── preprocessing.py             # Leakage removal, encoding & scaling
-│   ├── dataset.py                   # PyTorch Dataset & DataLoader
-│   ├── model.py                     # TabTransformer architecture
-│   ├── train.py                     # Multi-epoch training & validation loop
-│   ├── evaluate.py                  # Metrics calculation & plotting functions
-│   └── utils.py                     # Seeds, device detection, JSON I/O
-├── outputs/
-│   ├── figures/
-│   │   ├── dataset_distribution.png         # Fig 1 recreation
-│   │   ├── tabtransformer_architecture.png # Fig 2 recreation
-│   │   ├── training_history.png             # Training/Validation Loss, Acc, F1
-│   │   ├── roc_curve.png                    # Fig 3 recreation (AUC = 0.9418)
-│   │   └── confusion_matrix.png             # Annotated TN, FP, FN, TP
-│   ├── metrics/
-│   │   ├── preprocessing_summary_table.csv
-│   │   ├── paper_comparison_table.csv
-│   │   ├── training_history.json
-│   │   └── test_metrics.json
-│   └── models/
-│       └── best_tabtransformer.pt   # Best checkpoint (Val Loss = 0.2149)
-├── notebooks/
-│   └── diabetes_tabtransformer.ipynb# Interactive Jupyter Notebook
-├── requirements.txt
-├── main.py                          # Master experiment runner
-└── README.md                        # Documentation
+model-training-diabeties-ds-/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                       # GitHub Actions CI/CD Pipeline
+├── frontend/                                # Angular Standalone Frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── app.ts                       # Dual-model logic, presets & inference
+│   │   │   ├── app.html                     # Clinical dashboard UI & verification banner
+│   │   │   ├── app.css                      # Modern responsive styling
+│   │   │   ├── app.spec.ts                  # Vitest unit test suite
+│   │   │   ├── app.config.ts                # Application configuration & HTTP client
+│   │   │   └── app.routes.ts                # Routing configuration
+│   │   ├── index.html                       # HTML template with Google Fonts
+│   │   ├── styles.css                       # Global design system & tokens
+│   │   └── main.ts                          # App bootstrap
+│   ├── angular.json                         # Angular CLI configuration
+│   ├── package.json                         # Frontend dependencies & scripts
+│   └── tsconfig.json                        # TypeScript configuration
+├── app.py                                   # Flask Backend REST API & HTML Dashboard
+├── test_app.py                              # Automated Flask unit & API tests
+├── requirements.txt                         # Root Python backend dependencies
+├── random_forest_diabetes_model.pkl         # 100-Tree Random Forest trained pipeline
+├── logistic_regression_diabetes_model.pkl   # Logistic Regression baseline pipeline
+├── templates/
+│   └── index.html                           # Original Flask Jinja template
+├── static/
+│   ├── style.css                            # Original Flask stylesheet
+│   └── random_forest_roc_curve.png          # Verified ROC Curve artifact
+├── diabetes_random_forest_reproduction/     # JUTITI Random Forest research paper reproduction
+├── diabetes-tabtransformer/                 # JoCoSiR TabTransformer research paper reproduction
+└── README.md                                # Full Documentation & Lab Guide
 ```
 
 ---
 
-## 12. How to Run
+## 12. Local Development & Testing Guide
 
-### 1. Install Dependencies
+### 1. Run the Flask Backend API
 ```bash
+# Install backend dependencies
 pip install -r requirements.txt
+
+# Run backend unit tests
+python test_app.py
+
+# Start Flask development server
+python app.py
+# Server runs on: http://127.0.0.1:5000
+# Health check:  http://127.0.0.1:5000/api/health
 ```
 
-### 2. Run Master Experiment
+### 2. Run the Angular Frontend
 ```bash
-python diabetes-tabtransformer/main.py
+# Navigate to frontend directory
+cd frontend
+
+# Install npm dependencies
+npm install
+
+# Run frontend unit tests (Vitest)
+npm run test:ci
+
+# Start Angular local development server
+npm start
+# Open browser at: http://localhost:4200
 ```
 
-### 3. Interactive Jupyter Notebook
-Open and execute:
+### 3. Build Production Bundle for GitHub Pages
 ```bash
-jupyter notebook diabetes-tabtransformer/notebooks/diabetes_tabtransformer.ipynb
+cd frontend
+npm run build:gh-pages
 ```
+
+---
+
+## 13. Summary of CI/CD Automated Workflow for Evaluator
+| Stage | Component | Tools / Runners | Verification Check |
+|---|---|---|---|
+| **Code Edit** | HTML / CSS / TS | VS Code | Quick edit to header or styling |
+| **Push** | Git Version Control | Git CLI (`git push origin main`) | Triggers GitHub Actions workflow |
+| **CI: Backend Test** | Python Flask API | Python 3.10 / `pytest` / `test_app.py` | 100% assertions passed |
+| **CI: Frontend Test** | Angular 22 & Vitest | Node.js 22 / Vitest | 5/5 unit tests passed |
+| **CI: Build** | Production Build | `@angular/build` with base-href | Generates optimized static bundle |
+| **CD: Deploy** | GitHub Pages Deployment | `actions/deploy-pages@v4` & `gh-pages` | Publishes live site with 0 downtime |

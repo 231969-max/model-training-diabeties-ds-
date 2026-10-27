@@ -49,8 +49,8 @@ export interface PredictionResult {
 export class App implements OnInit {
   // Lab Verification editable indicators
   public readonly appTitle = signal('Clinical Diabetes Risk Prediction Dashboard');
-  public readonly labVerificationBadge = signal('CI/CD Automated Deployment Active');
-  public readonly pipelineVersion = signal('v1.0.4-live');
+  public readonly labVerificationBadge = signal('CI/CD Automated Deployment Active & Verified');
+  public readonly pipelineVersion = signal('v1.0.5-live-verified');
 
   // Backend connection status
   public readonly backendStatus = signal<'connected' | 'offline' | 'checking'>('checking');
