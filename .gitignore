@@ -9,3 +9,7 @@ __pycache__/
 node_modules/
 dist/
 .angular/
+
+# Research reference papers (copyrighted binary PDFs excluded from VCS)
+researchpapers/
+

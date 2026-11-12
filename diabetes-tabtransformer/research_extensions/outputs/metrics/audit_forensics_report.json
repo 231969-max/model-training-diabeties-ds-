@@ -1,0 +1,119 @@
+{
+  "split_audit": {
+    "train_n": 69999,
+    "val_n": 15001,
+    "test_n": 15000,
+    "overlap_train_val": 0,
+    "overlap_train_test": 0,
+    "overlap_val_test": 0,
+    "train_pos_rate": 0.5999799997142816,
+    "val_pos_rate": 0.5999600026664889,
+    "test_pos_rate": 0.6
+  },
+  "synthetic_label_audit": {
+    "p_y1_given_hba1c_ge_6_5": 1.0,
+    "n_hba1c_ge_6_5": 51105,
+    "p_y1_given_fpg_ge_126": 1.0,
+    "n_fpg_ge_126": 14528,
+    "p_y1_given_ppg_ge_200": 0.9998037869125871,
+    "n_ppg_ge_200": 10193,
+    "any_ada_exact_match_rate": 0.92108,
+    "any_ada_fp_negatives": 2,
+    "below_ada_count": 47890,
+    "below_ada_pos_rate": 0.16475255794529128,
+    "below_ada_stage_crosstab": {
+      "0": {
+        "Gestational": 120,
+        "No Diabetes": 7981,
+        "Pre-Diabetes": 31843,
+        "Type 1": 56,
+        "Type 2": 0
+      },
+      "1": {
+        "Gestational": 21,
+        "No Diabetes": 0,
+        "Pre-Diabetes": 0,
+        "Type 1": 17,
+        "Type 2": 7852
+      }
+    }
+  },
+  "corruption_audit": {
+    "mcar20_empirical_num_missing_rate": 0.1992799937725067,
+    "mcar20_empirical_cat_missing_rate": 0.19973333179950714,
+    "mcar20_cat_missing_token_rate": 0.3987833333333333,
+    "drop_hba1c_m_num_per_col": {
+      "age": 0.0,
+      "bmi": 0.0,
+      "glucose_fasting": 0.0,
+      "cholesterol_total": 0.0,
+      "hba1c": 1.0
+    },
+    "noise_0.25_empirical_mean": 0.00010047297109849751,
+    "noise_0.25_empirical_std": 0.2500187158584595
+  },
+  "val_only_calibrator_selection_audit": {
+    "none": {
+      "val_clean_auc": 0.9473412209076265,
+      "val_clean_ece": 0.0063803802113137995,
+      "val_clean_nll": 0.21491245323977032,
+      "val_mcar20_auc": 0.9247437278972023,
+      "val_mcar20_ece": 0.0821560298990733,
+      "val_mcar20_nll": 0.4939026028335155,
+      "val_drophba1c_auc": 0.6367562443296487,
+      "val_drophba1c_nll": 1.624808934084362,
+      "mean_val_nll_clean_mcar20": 0.3544075280366429
+    },
+    "temperature": {
+      "val_clean_auc": 0.9473412209076265,
+      "val_clean_ece": 0.006469004145281943,
+      "val_clean_nll": 0.21491239382680716,
+      "val_mcar20_auc": 0.9247437278972023,
+      "val_mcar20_ece": 0.08222267136252281,
+      "val_mcar20_nll": 0.4941551233494538,
+      "val_drophba1c_auc": 0.6367562443296487,
+      "val_drophba1c_nll": 1.6260677190905954,
+      "mean_val_nll_clean_mcar20": 0.35453375858813047
+    },
+    "platt": {
+      "val_clean_auc": 0.9473412209076265,
+      "val_clean_ece": 0.004859396080678368,
+      "val_clean_nll": 0.21417662838362148,
+      "val_mcar20_auc": 0.9247437278972023,
+      "val_mcar20_ece": 0.08282740390601995,
+      "val_mcar20_nll": 0.5961141018952731,
+      "val_drophba1c_auc": 0.6367562443296487,
+      "val_drophba1c_nll": 2.1531948813497532,
+      "mean_val_nll_clean_mcar20": 0.4051453651394473
+    },
+    "isotonic": {
+      "val_clean_auc": 0.9481202947656872,
+      "val_clean_ece": 5.194320371151356e-08,
+      "val_clean_nll": 0.2108857760737451,
+      "val_mcar20_auc": 0.8569189579514526,
+      "val_mcar20_ece": 0.08148383324110024,
+      "val_mcar20_nll": 1.4044101249623255,
+      "val_drophba1c_auc": 0.5,
+      "val_drophba1c_nll": 6.447883001437211,
+      "mean_val_nll_clean_mcar20": 0.8076479505180353
+    }
+  },
+  "shap_sensitivity_audit": {
+    "additivity_max_abs_err_bg25_eval110": 4.9769878385230726e-08,
+    "additivity_mean_abs_err_bg25_eval110": 8.51124524914315e-09,
+    "additivity_max_abs_err_bg100_eval250": 5.269279845787622e-08,
+    "clean_cross_agreement_top3_jaccard": 0.7369999999999999,
+    "clean_cross_agreement_cosine": 0.9984471157920592,
+    "clean_cross_agreement_global_tau": 0.9444444444444445,
+    "mcar20_stability_bg25_eval110": {
+      "top3_jaccard": 0.7169999999999999,
+      "local_tau": 0.78,
+      "cosine": 0.862754516913088
+    },
+    "mcar20_stability_bg100_eval250": {
+      "top3_jaccard": 0.835,
+      "local_tau": 0.87,
+      "cosine": 0.8630902975675316
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "best_calibrator": "isotonic",
+  "temperature_fitted": 0.999186610691803,
+  "prc_optimal_threshold": {
+    "optimal_threshold": 0.6923076923076923,
+    "val_f1_at_threshold": 0.9290851810021993,
+    "val_precision_at_threshold": 0.9989773744087945,
+    "val_recall_at_threshold": 0.8683333333333333
+  },
+  "mcnemar_uncal05_vs_bestcal_prc": {
+    "n01": 17,
+    "n10": 3,
+    "statistic": 8.45,
+    "p_value": 0.0025768280029296875
+  }
+}

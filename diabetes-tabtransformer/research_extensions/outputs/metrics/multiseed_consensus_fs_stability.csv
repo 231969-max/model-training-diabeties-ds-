@@ -1,0 +1,4 @@
+seed,cons_cat,cons_num,n_features
+42,family_history_diabetes,"age,physical_activity_minutes_per_week,bmi,systolic_bp,glucose_fasting,glucose_postprandial,hba1c",8
+101,family_history_diabetes,"age,physical_activity_minutes_per_week,bmi,ldl_cholesterol,glucose_fasting,glucose_postprandial,hba1c",8
+202,family_history_diabetes,"age,physical_activity_minutes_per_week,bmi,glucose_fasting,glucose_postprandial,hba1c",7

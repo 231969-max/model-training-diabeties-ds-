@@ -304,3 +304,118 @@ npm run build:gh-pages
 | **CI: Frontend Test** | Angular 22 & Vitest | Node.js 22 / Vitest | 5/5 unit tests passed |
 | **CI: Build** | Production Build | `@angular/build` with base-href | Generates optimized static bundle |
 | **CD: Deploy** | GitHub Pages Deployment | `actions/deploy-pages@v4` & `gh-pages` | Publishes live site with 0 downtime |
+
+---
+
+## 14. Research Novelty: Robustness-Aware, Calibrated & Explanation-Stable TabTransformer
+
+### 14.1 Research Title
+**Robustness-Aware, Calibrated, and Explanation-Stable TabTransformer for Clinical Diabetes Prediction**
+
+Detailed theoretical background, literature gap analysis, and implementation roadmap are documented in the [`research/`](research/) suite:
+- [RESEARCH_CONTEXT.md](research/RESEARCH_CONTEXT.md): Base paper hyperparameter and local baseline replication.
+- [LITERATURE_REVIEW.md](research/LITERATURE_REVIEW.md): In-depth critical survey of 10+ contemporary papers (2020–2026).
+- [LITERATURE_COMPARISON.md](research/LITERATURE_COMPARISON.md): Methodological comparison matrix across recent architectures.
+- [RESEARCH_GAP.md](research/RESEARCH_GAP.md): Critical analysis of unaddressed failure modes under clinical data corruption.
+- [PROPOSED_METHODOLOGY.md](research/PROPOSED_METHODOLOGY.md): Architectural design of `RobustTabTransformer` ($A_4$).
+- [EXPERIMENTAL_RESULTS.md](research/EXPERIMENTAL_RESULTS.md): Complete raw experimental tables, statistical tests, negative results, and audit logs.
+- [IMPLEMENTATION_ROADMAP.md](research/IMPLEMENTATION_ROADMAP.md): Staged execution milestones and integrity checklists.
+
+---
+
+### 14.2 Research Contribution
+While deep tabular architectures like **TabTransformer** achieve high clean-data classification accuracy, real-world clinical screening and telehealth deployments rarely guarantee complete, noise-free laboratory profiles. In clinical workflows, fasting glucose or HbA1c may be omitted due to patient non-compliance, emergency triage, or assay unavailability.
+
+The proposed **$A_4$ (RobustCons TabTransformer)** architecture addresses these vulnerabilities by integrating:
+1. **Consensus-Based Feature Selection**: Fitted strictly on training data across 28 non-leakage candidate features using four independent criteria (ANOVA F-statistic, Mutual Information, Random Forest Gini importance, and $L_1$-penalized Logistic Regression), isolating an optimal 8-feature subset (`family_history_diabetes`, `hba1c`, `glucose_fasting`, `age`, `physical_activity_minutes_per_week`, `bmi`, `glucose_postprandial`, `systolic_bp`).
+2. **Missingness-Aware Representations**: Continuous features are paired with explicit binary missingness indicator masks $m_{\text{num}} \in \{0, 1\}$, embedded via a linear projection layer and concatenated to the numerical representation. Categorical features reserve a dedicated `[MISSING]` token embedding ($K+1$), replacing silent mode imputation with structural awareness of missing data.
+3. **Stochastic Corruption Training**: During training, batches are subjected to stochastic feature masking ($p_{\text{mask}} = 0.15$) and Gaussian measurement noise ($\sigma = 0.10$), regularizing self-attention mechanisms to learn redundant glycemic pathways rather than over-relying on a single dominant laboratory marker.
+4. **Shift-Safe Probability Calibration**: Validation-only fitted **Temperature Scaling** ensures predicted probabilities reflect true empirical clinical risk without non-parametric binning saturation under distribution shift.
+5. **Post-Hoc Decision Threshold Optimization**: Validation Precision-Recall Curve (PRC) optimization addresses clinical false-negative penalties.
+6. **Explanation-Stability Verification**: Systematic auditing of post-hoc attribution consistency via `shap.PermutationExplainer` under missingness and assay noise.
+
+---
+
+### 14.3 Multi-Seed Experimental Benchmark ($A_0$ Baseline vs. $A_4$ Robust)
+To guarantee rigorous academic reproducibility, both the baseline ($A_0$) and proposed model ($A_4$) were independently trained and evaluated across **three random seeds (`42, 101, 202`)** on the untouched test partition ($N = 15,000$). 
+
+The table below presents the verified **Mean Accuracy** across corruption regimes:
+
+| Scenario | A0 Baseline Accuracy | A4 Robust Accuracy |
+|---|---:|---:|
+| Clean | 92.05% | 91.15% |
+| MCAR 20% | 85.58% | 89.02% |
+| MCAR 30% | 82.18% | 87.43% |
+| HbA1c missing | 60.01% | 84.31% |
+| Glucose + HbA1c missing | 60.00% | 82.28% |
+| MCAR 20% + Noise 0.25 | 80.57% | 85.25% |
+
+#### Comprehensive Evaluation Metrics (Mean ± Standard Deviation Across Seeds 42, 101, 202)
+From [multiseed_a0_vs_a4_summary.csv](diabetes-tabtransformer/research_extensions/outputs/metrics/multiseed_a0_vs_a4_summary.csv):
+
+| Stress Scenario | Model | Accuracy | ROC-AUC | PR-AUC | Brier Score (↓) | ECE (↓) | False Negatives | False Positives |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Clean Test** | $A_0$ Baseline | **0.9205 ± 0.0032** | **0.9454 ± 0.0045** | **0.9729 ± 0.0021** | **0.0656 ± 0.0024** | **0.0083 ± 0.0022** | 1,160.0 ± 50.3 | 32.3 ± 7.2 |
+| | $A_4$ RobustCons | 0.9115 ± 0.0046 | 0.9443 ± 0.0031 | 0.9721 ± 0.0015 | 0.0710 ± 0.0028 | 0.0152 ± 0.0010 | 1,134.0 ± 50.5 | 193.3 ± 20.5 |
+| **MCAR 20%** | $A_0$ Baseline | 0.8558 ± 0.0038 | 0.9226 ± 0.0062 | 0.9573 ± 0.0039 | 0.1271 ± 0.0081 | 0.0776 ± 0.0078 | 958.3 ± 35.0 | 1,204.0 ± 32.1 |
+| | $A_4$ RobustCons | **0.8902 ± 0.0050** | **0.9375 ± 0.0043** | **0.9680 ± 0.0020** | **0.0841 ± 0.0028** | **0.0157 ± 0.0035** | 1,179.0 ± 41.1 | 467.7 ± 38.4 |
+| **MCAR 30%** | $A_0$ Baseline | 0.8218 ± 0.0073 | 0.8992 ± 0.0109 | 0.9417 ± 0.0069 | 0.1601 ± 0.0136 | 0.1158 ± 0.0144 | 852.0 ± 41.1 | 1,820.7 ± 70.9 |
+| | $A_4$ RobustCons | **0.8743 ± 0.0042** | **0.9320 ± 0.0043** | **0.9643 ± 0.0020** | **0.0932 ± 0.0024** | **0.0191 ± 0.0021** | 1,180.3 ± 34.0 | 705.3 ± 31.8 |
+| **Missing HbA1c** | $A_0$ Baseline | 0.6001 ± 0.0002 | 0.6147 ± 0.0658 | 0.7607 ± 0.0409 | 0.3706 ± 0.0325 | 0.3666 ± 0.0371 | 0.0 ± 0.0 | 5,998.3 ± 2.9 |
+| | $A_4$ RobustCons | **0.8431 ± 0.0052** | **0.9166 ± 0.0040** | **0.9528 ± 0.0022** | **0.1119 ± 0.0024** | **0.0243 ± 0.0042** | 1,383.3 ± 114.4 | 970.7 ± 80.1 |
+| **Missing Gluc + HbA1c**| $A_0$ Baseline | 0.6000 ± 0.0000 | 0.4305 ± 0.0676 | 0.5579 ± 0.0426 | 0.3764 ± 0.0244 | 0.3645 ± 0.0389 | 0.0 ± 0.0 | 6,000.0 ± 0.0 |
+| | $A_4$ RobustCons | **0.8228 ± 0.0029** | **0.9013 ± 0.0031** | **0.9418 ± 0.0019** | **0.1248 ± 0.0011** | **0.0298 ± 0.0101** | 1,373.3 ± 117.8 | 1,284.0 ± 81.3 |
+| **Combined Corruption**| $A_0$ Baseline | 0.8057 ± 0.0041 | 0.8773 ± 0.0071 | 0.9168 ± 0.0047 | 0.1673 ± 0.0089 | 0.1221 ± 0.0106 | 1,314.7 ± 50.0 | 1,599.7 ± 22.5 |
+| | $A_4$ RobustCons | **0.8525 ± 0.0045** | **0.9183 ± 0.0033** | **0.9547 ± 0.0015** | **0.1109 ± 0.0017** | **0.0407 ± 0.0002** | 1,439.0 ± 35.7 | 773.3 ± 32.9 |
+
+> **Clean Trade-Off Analysis**: Stochastic corruption training incurs a modest **$-0.90\%$ clean accuracy penalty** ($91.15\%$ vs. $92.05\%$) while preserving identical clean discriminative ability (ROC-AUC $0.9443$ vs. $0.9454$). In exchange, $A_4$ gains massive fault tolerance: under missing HbA1c, accuracy increases by **$+24.30\%$** and Expected Calibration Error decreases **$15\times$** ($0.0243$ vs. $0.3666$).
+
+---
+
+### 14.4 Forensic Dataset & Diagnostic Rule Audit
+A thorough forensic audit of the 100,000 patient records was conducted ([audit_forensics_report.json](diabetes-tabtransformer/research_extensions/outputs/metrics/audit_forensics_report.json)):
+1. **ADA Diagnostic Cutoffs & Label Determinism**:
+   - $P(\text{diagnosed\_diabetes} = 1 \mid \text{hba1c} \ge 6.5) = 1.0000$ (51,105 patients, exactly 0 false positives).
+   - $P(\text{diagnosed\_diabetes} = 1 \mid \text{glucose\_fasting} \ge 126) = 1.0000$ (14,528 patients, exactly 0 false positives).
+   - Standard clinical American Diabetes Association (ADA) threshold rules match **92.11% of all labels** (92,108 / 100,000 rows).
+   - The remaining 7,890 diabetic patients below cutoffs represent clinically realistic non-deterministic diagnoses (7,852 Type 2 cases managed with lifestyle/medication, 17 Type 1, 21 Gestational).
+2. **Semi-Synthetic Nature of the Dataset**:
+   - These findings confirm that the underlying Kaggle dataset has strong **threshold-driven, semi-synthetic characteristics**. It must not be characterized as an uncurated natural clinical cohort.
+3. **Synthetic Target Leakage Removal**:
+   - Linear regression of `diabetes_risk_score` against basic indicators yielded $R^2 = 0.9735$, proving it is a synthetically generated composite risk score that leaks target labels. It was strictly excluded from all feature selections.
+4. **Root Cause of Baseline Catastrophic Collapse**:
+   - The cohort median for `hba1c` is **`6.52%`** (above the diagnostic threshold).
+   - Under naive median imputation ($A_0$), whenever HbA1c is omitted, `6.52%` is imputed for 100% of patients.
+   - The baseline classifies all patients as diabetic ($0.0\%$ specificity, 6,000 false positives, collapsing accuracy to exactly $60.00\%$, which equals the cohort positive prevalence). $A_4$ avoids this via explicit missingness indicator masks and stochastic training.
+
+---
+
+### 14.5 Validation Protocols & Statistical Significance
+1. **Strict Data Leakage Prevention**:
+   - The 70/15/15 split ($N = 69,999 / 15,001 / 15,000$) ensures zero patient overlap ($\text{Train} \cap \text{Val} = \emptyset, \text{Train} \cap \text{Test} = \emptyset$).
+   - Imputers, scalers, encoders, and consensus feature selectors are fitted **strictly on training data**.
+   - Temperature scaling calibrators and PRC decision thresholds are fitted **strictly on validation data**.
+   - The test set was touched only once at evaluation time.
+2. **Paired McNemar's Tests (A0 vs. A4)**:
+   - **MCAR 20%**: $p = 1.74 \times 10^{-35}$ (Seed 42), $5.57 \times 10^{-34}$ (Seed 101), $4.37 \times 10^{-29}$ (Seed 202).
+   - **Missing HbA1c**: $p < 10^{-300}$ across all three seeds.
+   - **Noise $\sigma=0.25$**: $p = 1.65 \times 10^{-4}$ (Seed 42), $p = 0.0111$ (Seed 101), $p = 3.87 \times 10^{-3}$ (Seed 202).
+   - **Combined Corruption**: $p = 8.94 \times 10^{-47}$ (Seed 42), $5.95 \times 10^{-38}$ (Seed 101), $2.61 \times 10^{-37}$ (Seed 202).
+3. **1,000-Iteration Stratified Bootstrap 95% Confidence Intervals**:
+   - Confirm completely non-overlapping intervals favoring $A_4$ under corruption (e.g., Seed 42 Drop HbA1c accuracy: $A_0 = [0.5923, 0.6079]$ vs. $A_4 = [0.8353, 0.8465]$; ECE: $A_0 = [0.3760, 0.3914]$ vs. $A_4 = [0.0180, 0.0271]$).
+
+---
+
+### 14.6 Explainability & SHAP Stability Audit
+Audited across $n = 500$ stratified test patients using `shap.PermutationExplainer` ([a4_robustcons8_tabtransformer_shap_global_importance.csv](diabetes-tabtransformer/research_extensions/outputs/metrics/a4_robustcons8_tabtransformer_shap_global_importance.csv)):
+- **Additivity Verification**: Max absolute additivity error is $< 5.3 \times 10^{-8}$ (mean $8.51 \times 10^{-9}$), confirming mathematical convergence.
+- **Attribution Redistribution**: When HbA1c is omitted, baseline $A_0$ continues attributing $0.3573$ mean $|SHAP|$ to the *missing* feature (due to static median imputation), causing local explanation cosine similarity to collapse to **$0.0608$** and global Top-3 Jaccard to $0.5000$.
+- In contrast, $A_4$ dynamically shifts attribution to observed metabolic indicators (`glucose_postprandial`: $0.0318 \to 0.1527$; `glucose_fasting`: $0.0532 \to 0.0820$), maintaining a local explanation cosine similarity of **$0.5989$** ($10\times$ improvement) and preserving global Top-3 Jaccard stability at **$1.0000$**.
+
+---
+
+### 14.7 Research Limitations & Threats to Validity
+1. **Semi-Synthetic Label Characteristics**: The 100,000-record dataset displays near-deterministic ADA rule adherence (92.11% match). Results cannot be cited as proof of real-world clinical effectiveness without external validation on natural EHR cohorts (e.g., MIMIC-IV, UK Biobank, or NHANES).
+2. **Simulation of Clinical Corruption**: Synthetic MCAR missingness and Gaussian noise model measurement failure and assay variance, but do not fully reflect complex clinical Missing Not At Random (MNAR) processes (e.g., tests ordered selectively based on patient acuity).
+3. **Calibration Under Shift**: Non-parametric calibration (Isotonic Regression) fails catastrophically under covariate shift (validation AUC dropped from $0.9473 \to 0.8569$; test NLL exploded to $1.458$). Parametric scaling (Temperature Scaling) must be used.
+

@@ -1,0 +1,162 @@
+{
+  "clean": {
+    "A0_Baseline_Uncal_vs_A3_Robust9_TempCal": {
+      "n01": 40,
+      "n10": 179,
+      "statistic": 86.95890410958904,
+      "p_value": 1.1079973492116688e-20
+    },
+    "A0_Baseline_Uncal_vs_A4_RobustCons8_TempCal": {
+      "n01": 41,
+      "n10": 166,
+      "statistic": 74.28019323671498,
+      "p_value": 6.778017035916436e-18
+    },
+    "A3_Robust9_TempCal_vs_A4_RobustCons8_TempCal": {
+      "n01": 79,
+      "n10": 65,
+      "statistic": 1.1736111111111112,
+      "p_value": 0.27866049489924105
+    },
+    "A3_Robust9_TempCal_vs_A5_RF_9feat_PlattCal": {
+      "n01": 189,
+      "n10": 41,
+      "statistic": 93.95217391304348,
+      "p_value": 3.232405102423218e-22
+    },
+    "A4_RobustCons8_TempCal_vs_A5_RF_Cons8_PlattCal": {
+      "n01": 177,
+      "n10": 32,
+      "statistic": 99.2153110047847,
+      "p_value": 2.2648922746266834e-23
+    }
+  },
+  "mcar_20": {
+    "A0_Baseline_Uncal_vs_A3_Robust9_TempCal": {
+      "n01": 675,
+      "n10": 503,
+      "statistic": 24.822580645161292,
+      "p_value": 6.285680579221511e-07
+    },
+    "A0_Baseline_Uncal_vs_A4_RobustCons8_TempCal": {
+      "n01": 1165,
+      "n10": 679,
+      "statistic": 127.56236442516268,
+      "p_value": 1.3993392290207375e-29
+    },
+    "A3_Robust9_TempCal_vs_A4_RobustCons8_TempCal": {
+      "n01": 789,
+      "n10": 475,
+      "statistic": 77.50712025316456,
+      "p_value": 1.3224487203284963e-18
+    },
+    "A3_Robust9_TempCal_vs_A5_RF_9feat_PlattCal": {
+      "n01": 511,
+      "n10": 675,
+      "statistic": 22.402192242833053,
+      "p_value": 2.211214736343431e-06
+    },
+    "A4_RobustCons8_TempCal_vs_A5_RF_Cons8_PlattCal": {
+      "n01": 383,
+      "n10": 973,
+      "statistic": 255.84144542772862,
+      "p_value": 1.3835962552667413e-57
+    }
+  },
+  "drop_hba1c": {
+    "A0_Baseline_Uncal_vs_A3_Robust9_TempCal": {
+      "n01": 4081,
+      "n10": 2182,
+      "statistic": 575.1882484432381,
+      "p_value": 4.175823061254799e-127
+    },
+    "A0_Baseline_Uncal_vs_A4_RobustCons8_TempCal": {
+      "n01": 5093,
+      "n10": 1443,
+      "statistic": 2037.2094553243574,
+      "p_value": 0.0
+    },
+    "A3_Robust9_TempCal_vs_A4_RobustCons8_TempCal": {
+      "n01": 2506,
+      "n10": 755,
+      "statistic": 939.1291015026065,
+      "p_value": 3.06071508717456e-206
+    },
+    "A3_Robust9_TempCal_vs_A5_RF_9feat_PlattCal": {
+      "n01": 2182,
+      "n10": 4081,
+      "statistic": 575.1882484432381,
+      "p_value": 4.175823061254799e-127
+    },
+    "A4_RobustCons8_TempCal_vs_A5_RF_Cons8_PlattCal": {
+      "n01": 1443,
+      "n10": 5093,
+      "statistic": 2037.2094553243574,
+      "p_value": 0.0
+    }
+  },
+  "noise_0.25": {
+    "A0_Baseline_Uncal_vs_A3_Robust9_TempCal": {
+      "n01": 146,
+      "n10": 122,
+      "statistic": 1.9738805970149254,
+      "p_value": 0.16003656024588314
+    },
+    "A0_Baseline_Uncal_vs_A4_RobustCons8_TempCal": {
+      "n01": 835,
+      "n10": 763,
+      "statistic": 3.1545682102628287,
+      "p_value": 0.07571471974508397
+    },
+    "A3_Robust9_TempCal_vs_A4_RobustCons8_TempCal": {
+      "n01": 805,
+      "n10": 757,
+      "statistic": 1.414212548015365,
+      "p_value": 0.23435834317409576
+    },
+    "A3_Robust9_TempCal_vs_A5_RF_9feat_PlattCal": {
+      "n01": 119,
+      "n10": 157,
+      "statistic": 4.9601449275362315,
+      "p_value": 0.02593803338439199
+    },
+    "A4_RobustCons8_TempCal_vs_A5_RF_Cons8_PlattCal": {
+      "n01": 75,
+      "n10": 186,
+      "statistic": 46.36015325670498,
+      "p_value": 9.83963044583214e-12
+    }
+  },
+  "mcar_20_noise_0.25": {
+    "A0_Baseline_Uncal_vs_A3_Robust9_TempCal": {
+      "n01": 744,
+      "n10": 456,
+      "statistic": 68.64083333333333,
+      "p_value": 1.1813254495010876e-16
+    },
+    "A0_Baseline_Uncal_vs_A4_RobustCons8_TempCal": {
+      "n01": 1710,
+      "n10": 1089,
+      "statistic": 137.33476241514828,
+      "p_value": 1.0187752114035414e-31
+    },
+    "A3_Robust9_TempCal_vs_A4_RobustCons8_TempCal": {
+      "n01": 1313,
+      "n10": 980,
+      "statistic": 48.06977758395116,
+      "p_value": 4.113177622670284e-12
+    },
+    "A3_Robust9_TempCal_vs_A5_RF_9feat_PlattCal": {
+      "n01": 460,
+      "n10": 751,
+      "statistic": 69.4467382328654,
+      "p_value": 7.850611575238467e-17
+    },
+    "A4_RobustCons8_TempCal_vs_A5_RF_Cons8_PlattCal": {
+      "n01": 323,
+      "n10": 1071,
+      "statistic": 400.29340028694406,
+      "p_value": 4.754065451282278e-89
+    }
+  }
+}
